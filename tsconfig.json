@@ -1,0 +1,40 @@
+{
+  "compilerOptions": {
+    /* Language and Features */
+    "target": "ES2020",                                 // Use modern JavaScript features (ES2020)
+    "module": "commonjs",                               // CommonJS for Node.js compatibility
+    "lib": ["ES2020", "DOM"],                           // Include standard JavaScript and browser APIs
+    "strict": true,                                     // Enable all strict type-checking options
+    "esModuleInterop": true,                            // Allow default imports from CommonJS modules
+    "resolveJsonModule": true,                          // Allow importing JSON files
+    "forceConsistentCasingInFileNames": true,           // Enforce consistent file naming
+
+    /* Code Quality and Safety */
+    "noImplicitAny": true,                              // Avoid variables with an implicit `any` type
+    "noUnusedLocals": true,                             // Error on unused local variables
+    "noUnusedParameters": true,                         // Error on unused parameters in functions
+    "noImplicitReturns": true,                          // Ensure functions return all paths
+    "noFallthroughCasesInSwitch": true,                 // Prevent fallthrough in switch cases
+
+    /* Output Options */
+    "outDir": "./dist",                                 // Output directory for compiled files
+    "rootDir": "./src",                                 // Root directory of source files
+
+    /* Module Resolution */
+    "moduleResolution": "node",                         // Use Node.js-style resolution
+    "baseUrl": "./",                                    // Base directory for imports
+    "paths": {
+      "@/*": ["src/*"]                                  // Simplify imports with path aliases (e.g., '@/models/User')
+    },
+
+    /* Source Map for Debugging */
+    "sourceMap": true,                                  // Enable source maps for debugging
+
+    /* Experimental Features */
+    "experimentalDecorators": true,                     // Enable decorator support
+    "emitDecoratorMetadata": true                       // Emit metadata for decorators
+  },
+  "include": ["src/**/*"],                              // Include all TypeScript files in the src folder
+  "exclude": ["node_modules", "dist"],                  // Exclude compiled output
+  "typeRoots": ["./src/types", "./node_modules/@types"] // Add typeRoots for centralized type definitions
+}

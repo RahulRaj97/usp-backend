@@ -1,0 +1,6 @@
+tsconfig.json
+
+.env
+dist/
+coverage/
+node_modules/
