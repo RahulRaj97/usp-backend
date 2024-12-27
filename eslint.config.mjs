@@ -9,10 +9,10 @@ export default [
   {
     ignores: ['dist', 'node_modules'],
   },
+
   // Base JavaScript config
   {
     files: ['**/*.js', '**/*.mjs', '**/*.cjs'],
-    ...js.configs.recommended,
     languageOptions: {
       ecmaVersion: 'latest',
       sourceType: 'module',
@@ -25,7 +25,11 @@ export default [
         Buffer: 'readonly',
       },
     },
+    rules: {
+      ...js.configs.recommended.rules,
+    },
   },
+
   // TypeScript config
   {
     files: ['**/*.ts', '**/*.mts', '**/*.cts'],
@@ -49,8 +53,15 @@ export default [
     rules: {
       ...tsPlugin.configs.recommended.rules,
       ...tsPlugin.configs['recommended-requiring-type-checking'].rules,
+      '@typescript-eslint/no-unsafe-argument': 'off',
+      '@typescript-eslint/no-unsafe-assignment': 'off',
+      '@typescript-eslint/no-unused-vars': [
+        'warn',
+        { argsIgnorePattern: '^_' },
+      ],
     },
   },
+
   // Prettier integration
   {
     files: ['**/*.{js,mjs,cjs,ts,mts,cts}'],

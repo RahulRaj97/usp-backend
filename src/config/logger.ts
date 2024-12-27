@@ -1,5 +1,6 @@
-import appConfig from './app';
 import { createLogger, format, transports } from 'winston';
+
+import appConfig from './app';
 
 const logger = createLogger({
   level: appConfig.logging.level,
