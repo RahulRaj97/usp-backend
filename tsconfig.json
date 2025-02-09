@@ -22,10 +22,7 @@
 
     /* Module Resolution */
     "moduleResolution": "node",                         // Use Node.js-style resolution
-    "baseUrl": "./",                                    // Base directory for imports
-    "paths": {
-      "@/*": ["src/*"]                                  // Simplify imports with path aliases (e.g., '@/models/User')
-    },
+    "baseUrl": "./src",                                    // Base directory for imports
 
     /* Source Map for Debugging */
     "sourceMap": true,                                  // Enable source maps for debugging

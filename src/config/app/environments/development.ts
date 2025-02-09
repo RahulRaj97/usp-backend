@@ -1,4 +1,4 @@
-import { Config } from '@/types/config';
+import { Config } from '../../../types/config';
 import defaultConfig from './default';
 
 const developmentConfig: Config = {

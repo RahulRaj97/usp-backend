@@ -1,5 +1,4 @@
-// src/config/app/environments/default.ts
-import { Config } from '@/types/config';
+import { Config } from '../../../types/config';
 
 const defaultConfig: Config = {
   app: {
