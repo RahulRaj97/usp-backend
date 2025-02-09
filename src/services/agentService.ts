@@ -16,7 +16,7 @@ export const getAllAgents = async (): Promise<IAgent[]> => {
 };
 
 /**
- * Get a single agent by ID
+ * Get an agent by ID
  */
 export const getAgentById = async (id: string): Promise<IAgent | null> => {
   return await AgentModel.findById(id);

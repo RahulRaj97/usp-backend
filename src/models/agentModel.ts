@@ -11,6 +11,7 @@ export interface IAddress {
 export interface IAgent extends Document {
   firstName: string;
   lastName: string;
+  company?: string;
   email: string;
   password: string;
   phone?: string;
@@ -37,6 +38,7 @@ const AgentSchema: Schema = new Schema(
   {
     firstName: { type: String, required: true },
     lastName: { type: String, required: true },
+    company: { type: String },
     email: { type: String, required: true, unique: true },
     password: { type: String, required: true },
     phone: { type: String },
@@ -46,7 +48,7 @@ const AgentSchema: Schema = new Schema(
       enum: ['agent', 'sub-admin', 'parent'],
       default: 'agent',
     },
-    isActive: { type: Boolean, default: true },
+    isActive: { type: Boolean, default: false },
     isEmailVerified: { type: Boolean, default: false },
     parentId: { type: mongoose.Types.ObjectId, ref: 'Agent' },
     officeId: { type: mongoose.Types.ObjectId, ref: 'Office' },
