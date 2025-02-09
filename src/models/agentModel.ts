@@ -1,4 +1,6 @@
-import mongoose, { Schema, Document } from 'mongoose';
+import argon2 from 'argon2';
+
+import mongoose, { Schema, Document, CallbackError } from 'mongoose';
 
 export interface IAddress {
   street?: string;
@@ -24,6 +26,7 @@ export interface IAgent extends Document {
   address?: IAddress;
   createdAt: Date;
   updatedAt: Date;
+  comparePassword(candidatePassword: string): Promise<boolean>;
 }
 
 const AddressSchema: Schema = new Schema({
@@ -56,5 +59,39 @@ const AgentSchema: Schema = new Schema(
   },
   { timestamps: true },
 );
+
+/**
+ * Pre-save hook to hash password before saving
+ */
+AgentSchema.pre<IAgent>(
+  'save',
+  async function (next: (err?: CallbackError) => void) {
+    if (!this.isModified('password')) return next();
+    try {
+      this.password = await argon2.hash(this.password, {
+        timeCost: 3, // 3 iterations
+        parallelism: 1, // Single-threaded (optimal for web apps)
+        memoryCost: 2 ** 16, // 64MB
+        type: argon2.argon2id, // Argon2id is the most secure
+      });
+      next();
+    } catch (err) {
+      next(err as CallbackError);
+    }
+  },
+);
+
+/**
+ * Compare passwords using Argon2
+ */
+AgentSchema.methods.comparePassword = async function (
+  candidatePassword: string,
+): Promise<boolean> {
+  try {
+    return await argon2.verify(this.password, candidatePassword);
+  } catch (err) {
+    return false;
+  }
+};
 
 export default mongoose.model<IAgent>('Agent', AgentSchema);
