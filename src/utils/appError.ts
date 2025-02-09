@@ -1,4 +1,4 @@
-import { StatusCodes } from 'http-status-codes';
+import { StatusCodes } from '@/utils/httpStatuses';
 
 export class AppError extends Error {
   statusCode: number;
@@ -10,10 +10,11 @@ export class AppError extends Error {
     isOperational = true,
   ) {
     super(message);
+
     this.statusCode = statusCode;
     this.isOperational = isOperational;
     Object.setPrototypeOf(this, new.target.prototype);
-    Error.captureStackTrace(this);
+    Error.captureStackTrace(this, this.constructor);
   }
 }
 
