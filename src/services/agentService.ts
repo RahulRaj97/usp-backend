@@ -4,8 +4,7 @@ import AgentModel, { IAgent } from '../models/agentModel';
  * Create a new agent
  */
 export const createAgent = async (data: Partial<IAgent>): Promise<IAgent> => {
-  const agent = new AgentModel(data);
-  return await agent.save();
+  return await AgentModel.create(data);
 };
 
 /**
@@ -38,6 +37,7 @@ export const updateAgent = async (
 /**
  * Delete an agent by ID
  */
-export const deleteAgent = async (id: string): Promise<IAgent | null> => {
-  return await AgentModel.findByIdAndDelete(id);
+export const deleteAgent = async (id: string): Promise<boolean> => {
+  const agent = await AgentModel.findByIdAndDelete(id);
+  return agent !== null;
 };

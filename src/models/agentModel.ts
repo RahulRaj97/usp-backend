@@ -1,6 +1,5 @@
-import argon2 from 'argon2';
-
 import mongoose, { Schema, Document, CallbackError } from 'mongoose';
+import argon2 from 'argon2';
 
 export interface IAddress {
   street?: string;
@@ -43,7 +42,7 @@ const AgentSchema: Schema = new Schema(
     lastName: { type: String, required: true },
     company: { type: String },
     email: { type: String, required: true, unique: true },
-    password: { type: String, required: true },
+    password: { type: String, required: true, select: false },
     phone: { type: String },
     profileImage: { type: String },
     role: {
@@ -57,7 +56,11 @@ const AgentSchema: Schema = new Schema(
     officeId: { type: mongoose.Types.ObjectId, ref: 'Office' },
     address: { type: AddressSchema },
   },
-  { timestamps: true },
+  {
+    timestamps: true,
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true },
+  },
 );
 
 /**
@@ -69,10 +72,10 @@ AgentSchema.pre<IAgent>(
     if (!this.isModified('password')) return next();
     try {
       this.password = await argon2.hash(this.password, {
-        timeCost: 3, // 3 iterations
-        parallelism: 1, // Single-threaded (optimal for web apps)
-        memoryCost: 2 ** 16, // 64MB
-        type: argon2.argon2id, // Argon2id is the most secure
+        timeCost: 3,
+        parallelism: 1,
+        memoryCost: 2 ** 16,
+        type: argon2.argon2id,
       });
       next();
     } catch (err) {
@@ -80,6 +83,15 @@ AgentSchema.pre<IAgent>(
     }
   },
 );
+
+/**
+ * Automatically remove password field when converting to JSON
+ */
+AgentSchema.methods.toJSON = function () {
+  const obj = this.toObject();
+  delete obj.password;
+  return obj;
+};
 
 /**
  * Compare passwords using Argon2
