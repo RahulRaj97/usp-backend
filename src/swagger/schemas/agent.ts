@@ -24,7 +24,7 @@ export const agentSchema: OpenAPIV3.SchemaObject = {
     company: { type: 'string', description: 'Company name of the agent' },
     role: {
       type: 'string',
-      enum: ['agent', 'sub-admin', 'parent'],
+      enum: ['agent', 'sub-agent', 'parent'],
       description: 'Role of the agent',
     },
     isActive: { type: 'boolean', description: 'Whether the agent is active' },

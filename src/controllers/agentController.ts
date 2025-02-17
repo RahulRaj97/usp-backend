@@ -1,34 +1,23 @@
-import { Request, Response, NextFunction, RequestHandler } from 'express';
+import { Request, Response, NextFunction } from 'express';
 import {
-  createAgent as createAgentService,
-  getAllAgents as getAllAgentsService,
-  getAgentById as getAgentByIdService,
-  updateAgent as updateAgentService,
-  deleteAgent as deleteAgentService,
+  createAgent,
+  getAllAgents,
+  getAgentById,
+  updateAgent,
+  deleteAgent,
 } from '../services/agentService';
-
-import { NotFoundError, BadRequestError } from '../utils/appError';
 import { StatusCodes } from '../utils/httpStatuses';
 
 /**
- * Create an agent
+ * Create a new Agent
  */
-export const createAgent: RequestHandler = async (
+export const createAgentController = async (
   req: Request,
   res: Response,
   next: NextFunction,
-): Promise<void> => {
+) => {
   try {
-    const { firstName, lastName, email, password, role } = req.body;
-    if (!firstName || !lastName || !email || !password || !role) {
-      return next(
-        new BadRequestError(
-          'firstName, lastName, email, password, and role are required.',
-        ),
-      );
-    }
-
-    const agent = await createAgentService(req.body);
+    const agent = await createAgent(req.body);
     res.status(StatusCodes.CREATED).json(agent);
   } catch (error) {
     next(error);
@@ -36,15 +25,15 @@ export const createAgent: RequestHandler = async (
 };
 
 /**
- * Get all agents
+ * Get All Agents
  */
-export const getAllAgents: RequestHandler = async (
+export const getAllAgentsController = async (
   _req: Request,
   res: Response,
   next: NextFunction,
-): Promise<void> => {
+) => {
   try {
-    const agents = await getAllAgentsService();
+    const agents = await getAllAgents();
     res.status(StatusCodes.OK).json(agents);
   } catch (error) {
     next(error);
@@ -52,19 +41,15 @@ export const getAllAgents: RequestHandler = async (
 };
 
 /**
- * Get an agent by ID
+ * Get Agent by ID
  */
-export const getAgentById: RequestHandler = async (
+export const getAgentByIdController = async (
   req: Request,
   res: Response,
   next: NextFunction,
-): Promise<void> => {
+) => {
   try {
-    const { id } = req.params;
-    const agent = await getAgentByIdService(id);
-    if (!agent) {
-      return next(new NotFoundError(`Agent with id ${id} not found`));
-    }
+    const agent = await getAgentById(req.params.id);
     res.status(StatusCodes.OK).json(agent);
   } catch (error) {
     next(error);
@@ -72,40 +57,32 @@ export const getAgentById: RequestHandler = async (
 };
 
 /**
- * Update an agent by ID
+ * Update an Agent
  */
-export const updateAgent: RequestHandler = async (
+export const updateAgentController = async (
   req: Request,
   res: Response,
   next: NextFunction,
-): Promise<void> => {
+) => {
   try {
-    const { id } = req.params;
-    const agent = await updateAgentService(id, req.body);
-    if (!agent) {
-      return next(new NotFoundError(`Agent with id ${id} not found`));
-    }
-    res.status(StatusCodes.OK).json(agent);
+    const updatedAgent = await updateAgent(req.params.id, req.body);
+    res.status(StatusCodes.OK).json(updatedAgent);
   } catch (error) {
     next(error);
   }
 };
 
 /**
- * Delete an agent by ID
+ * Delete an Agent
  */
-export const deleteAgent: RequestHandler = async (
+export const deleteAgentController = async (
   req: Request,
   res: Response,
   next: NextFunction,
-): Promise<void> => {
+) => {
   try {
-    const { id } = req.params;
-    const agent = await deleteAgentService(id);
-    if (!agent) {
-      return next(new NotFoundError(`Agent with id ${id} not found`));
-    }
-    res.status(StatusCodes.OK).json({ message: 'Agent deleted successfully' });
+    await deleteAgent(req.params.id);
+    res.status(StatusCodes.NO_CONTENT).send();
   } catch (error) {
     next(error);
   }

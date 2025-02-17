@@ -1,14 +1,17 @@
 import express, { Application } from 'express';
+import cookieParser from 'cookie-parser';
 import swaggerUi from 'swagger-ui-express';
 
 import swaggerDocument from './swagger';
 import { globalErrorHandler } from './middlewares/errorHandler';
 
-import agentRouter from './routes/agentRouter';
+import authRoutes from './routes/authRoutes';
+import agentRoutes from './routes/agentRoutes';
 
 const app: Application = express();
 
 app.use(express.json());
+app.use(cookieParser());
 
 app.use((_, res, next) => {
   res.header('Access-Control-Allow-Origin', '*');
@@ -27,7 +30,8 @@ app.get('/health', (_, res) => {
   });
 });
 
-app.use('/agents', agentRouter);
+app.use('/api/auth', authRoutes);
+app.use('/api/agents', agentRoutes);
 
 app.use(
   (

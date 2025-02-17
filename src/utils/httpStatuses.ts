@@ -1,6 +1,7 @@
 export const StatusCodes = {
   OK: 200,
   CREATED: 201,
+  NO_CONTENT: 204,
   BAD_REQUEST: 400,
   UNAUTHORIZED: 401,
   FORBIDDEN: 403,
@@ -11,6 +12,7 @@ export const StatusCodes = {
 export const ReasonPhrases = {
   OK: 'OK',
   CREATED: 'Created',
+  NO_CONTENT: 'No Content',
   BAD_REQUEST: 'Bad Request',
   UNAUTHORIZED: 'Unauthorized',
   FORBIDDEN: 'Forbidden',
