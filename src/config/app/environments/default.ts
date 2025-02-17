@@ -1,12 +1,12 @@
-import { Config } from '@/types/config';
+import { Config } from '../../../types/config';
 
 const defaultConfig: Config = {
   app: {
-    port: 5000,
+    port: Number(process.env.PORT) || 5000,
     environment: 'development',
   },
   database: {
-    uri: 'mongodb://127.0.0.1:27017/usp-backend',
+    uri: process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/usp-backend',
   },
   logging: {
     level: 'info',

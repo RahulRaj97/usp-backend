@@ -3,6 +3,9 @@ import { OpenAPIV3 } from 'openapi-types';
 import { healthSchema } from './schemas/health';
 import { healthPath } from './paths/health';
 
+import { agentSchema } from './schemas/agent';
+import { agentPath } from './paths/agent';
+
 const swaggerDocument: OpenAPIV3.Document = {
   openapi: '3.0.0',
   info: {
@@ -19,10 +22,12 @@ const swaggerDocument: OpenAPIV3.Document = {
   components: {
     schemas: {
       Health: healthSchema,
+      Agent: agentSchema,
     },
   },
   paths: {
     ...healthPath,
+    ...agentPath,
   },
 };
 

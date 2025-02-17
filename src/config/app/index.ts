@@ -1,4 +1,4 @@
-import { Config } from '@/types/config';
+import { Config } from '../../types/config';
 
 import testConfig from './environments/test';
 import defaultConfig from './environments/default';

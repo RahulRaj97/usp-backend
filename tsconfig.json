@@ -22,19 +22,19 @@
 
     /* Module Resolution */
     "moduleResolution": "node",                         // Use Node.js-style resolution
-    "baseUrl": "./",                                    // Base directory for imports
-    "paths": {
-      "@/*": ["src/*"]                                  // Simplify imports with path aliases (e.g., '@/models/User')
-    },
+    "baseUrl": "./src",                                 // Base directory for imports
 
     /* Source Map for Debugging */
     "sourceMap": true,                                  // Enable source maps for debugging
 
     /* Experimental Features */
     "experimentalDecorators": true,                     // Enable decorator support
-    "emitDecoratorMetadata": true                       // Emit metadata for decorators
+    "emitDecoratorMetadata": true,                      // Emit metadata for decorators
+    "typeRoots": [                                      // Add typeRoots for centralized type definitions
+      "./src/types", 
+      "./node_modules/@types"
+    ]
   },
   "include": ["src/**/*"],                              // Include all TypeScript files in the src folder
   "exclude": ["node_modules", "dist"],                  // Exclude compiled output
-  "typeRoots": ["./src/types", "./node_modules/@types"] // Add typeRoots for centralized type definitions
 }
