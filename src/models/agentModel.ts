@@ -1,8 +1,9 @@
 import mongoose, { Schema, Document } from 'mongoose';
 
-export type AgentLevel = 'agent' | 'sub-admin' | 'parent';
+export type AgentLevel = 'agent' | 'sub-agent' | 'parent';
 
 export interface IAgent extends Document {
+  _id: mongoose.Types.ObjectId;
   user: mongoose.Types.ObjectId;
   firstName: string;
   lastName: string;
@@ -30,7 +31,7 @@ const AgentSchema: Schema = new Schema(
     profileImage: { type: String },
     level: {
       type: String,
-      enum: ['agent', 'sub-admin', 'parent'],
+      enum: ['agent', 'sub-agent', 'parent'],
       required: true,
       index: true,
     },

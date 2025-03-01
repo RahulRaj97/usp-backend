@@ -1,10 +1,9 @@
 import { OpenAPIV3 } from 'openapi-types';
 
-import { healthSchema } from './schemas/health';
-import { healthPath } from './paths/health';
-
-import { agentSchema } from './schemas/agent';
-import { agentPath } from './paths/agent';
+import { authPaths } from './paths/auth';
+import { agentPaths } from './paths/agent';
+import { healthPaths } from './paths/health';
+import { allSchemas } from './schemas';
 
 const swaggerDocument: OpenAPIV3.Document = {
   openapi: '3.0.0',
@@ -20,14 +19,20 @@ const swaggerDocument: OpenAPIV3.Document = {
     },
   ],
   components: {
-    schemas: {
-      Health: healthSchema,
-      Agent: agentSchema,
+    securitySchemes: {
+      BearerAuth: {
+        type: 'http',
+        scheme: 'bearer',
+        bearerFormat: 'JWT',
+      },
     },
+    schemas: allSchemas,
   },
+  security: [{ BearerAuth: [] }],
   paths: {
-    ...healthPath,
-    ...agentPath,
+    ...authPaths,
+    ...agentPaths,
+    ...healthPaths,
   },
 };
 

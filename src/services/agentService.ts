@@ -12,9 +12,8 @@ export const createAgent = async (agentData: Partial<IAgent & IUser>) => {
   try {
     const { email, password, address, ...agentSpecificFields } = agentData;
     const existingUser = await UserModel.findOne({ email }).session(session);
-    if (existingUser) {
+    if (existingUser)
       throw new BadRequestError('User with this email already exists');
-    }
     const user = await UserModel.create(
       [{ email, password, role: 'agent', address }],
       { session },
@@ -25,7 +24,10 @@ export const createAgent = async (agentData: Partial<IAgent & IUser>) => {
     );
     await session.commitTransaction();
     session.endSession();
-    return { user: user[0], agent: agent[0] };
+    return await AgentModel.findById(agent[0]._id).populate(
+      'user',
+      'email role address',
+    );
   } catch (error) {
     await session.abortTransaction();
     session.endSession();
