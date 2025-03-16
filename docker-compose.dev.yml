@@ -6,8 +6,10 @@ services:
     command: ['mongod', '--replSet', 'rs0', '--bind_ip_all']
     volumes:
       - mongo_data_dev:/data/db
-    environment:
-      MONGO_INITDB_DATABASE: 'usp-backend-dev'
+    ports:
+      - '27017:27017'
+    networks:
+      - mongo-net
 
   app:
     build:
@@ -26,6 +28,12 @@ services:
       - '5000:5000'
     depends_on:
       - mongodb
+    networks:
+      - mongo-net
 
 volumes:
   mongo_data_dev:
+
+networks:
+  mongo-net:
+    driver: bridge
