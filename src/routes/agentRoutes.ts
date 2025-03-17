@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import {
   deleteAgentController,
+  verifyOTPController,
   updateAgentController,
   getAllAgentsController,
   getAgentByIdController,
@@ -14,6 +15,9 @@ const router = Router();
 
 // Public route - Parent agent registration
 router.post('/register', registerAgentController);
+
+// Public route - Verify OTP
+router.post('/verify-otp', verifyOTPController);
 
 // Protected route - Only parent agents can create sub-agents/agents
 router.post('/', authenticate, createSubAgentController);

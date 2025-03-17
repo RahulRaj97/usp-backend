@@ -32,7 +32,7 @@
     "emitDecoratorMetadata": true,                      // Emit metadata for decorators
     "typeRoots": [                                      // Add typeRoots for centralized type definitions
       "./src/types", 
-      "./node_modules/@types"
+      "node_modules/@types"
     ]
   },
   "include": ["src/**/*"],                              // Include all TypeScript files in the src folder

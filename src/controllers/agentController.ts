@@ -4,16 +4,17 @@ import {
   updateAgent,
   getAllAgents,
   getAgentById,
+  verifyAgentOTP,
   createSubAgent,
-  createParentAgent,
   getAgentByUserId,
   toggleAgentStatus,
+  sendOTPAndRegisterAgent,
 } from '../services/agentService';
 import { StatusCodes } from '../utils/httpStatuses';
 import { UnauthorizedError } from '../utils/appError';
 
 /**
- * Register a Parent Agent (Public Route)
+ * Register a Parent Agent & Send OTP
  */
 export const registerAgentController = async (
   req: Request,
@@ -21,18 +22,25 @@ export const registerAgentController = async (
   next: NextFunction,
 ) => {
   try {
-    const { firstName, lastName, company, phone, email, password, address } =
-      req.body;
-    const agent = await createParentAgent({
-      firstName,
-      lastName,
-      company,
-      phone,
-      email,
-      password,
-      address,
-    });
-    res.status(StatusCodes.CREATED).json(agent);
+    const response = await sendOTPAndRegisterAgent(req.body);
+    res.status(StatusCodes.CREATED).json(response);
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Verify OTP & Activate Agent
+ */
+export const verifyOTPController = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const { email, otp } = req.body;
+    const response = await verifyAgentOTP(email, otp);
+    res.status(StatusCodes.OK).json(response);
   } catch (error) {
     next(error);
   }
