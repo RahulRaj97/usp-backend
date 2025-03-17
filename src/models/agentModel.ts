@@ -1,8 +1,9 @@
 import mongoose, { Schema, Document } from 'mongoose';
 
-export type AgentLevel = 'agent' | 'sub-admin' | 'parent';
+export type AgentLevel = 'agent' | 'sub-agent' | 'parent';
 
 export interface IAgent extends Document {
+  _id: mongoose.Types.ObjectId;
   user: mongoose.Types.ObjectId;
   firstName: string;
   lastName: string;
@@ -30,13 +31,25 @@ const AgentSchema: Schema = new Schema(
     profileImage: { type: String },
     level: {
       type: String,
-      enum: ['agent', 'sub-admin', 'parent'],
+      enum: ['agent', 'sub-agent', 'parent'],
       required: true,
       index: true,
     },
-    parentId: { type: mongoose.Types.ObjectId, ref: 'Agent' },
+    parentId: { type: mongoose.Schema.Types.ObjectId, ref: 'Agent' },
   },
-  { timestamps: true },
+  {
+    timestamps: true,
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true },
+  },
 );
+
+/**
+ * Automatically populate user details on all find queries.
+ */
+AgentSchema.pre(/^find/, function (this: mongoose.Query<any, any>, next) {
+  this.populate('user', 'email role address isActive isEmailVerified');
+  next();
+});
 
 export default mongoose.model<IAgent>('Agent', AgentSchema);

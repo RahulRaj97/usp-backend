@@ -5,7 +5,7 @@ const ACCESS_TOKEN_SECRET =
   process.env.ACCESS_TOKEN_SECRET || 'your_access_secret';
 const REFRESH_TOKEN_SECRET =
   process.env.REFRESH_TOKEN_SECRET || 'your_refresh_secret';
-const ACCESS_EXPIRY = '15m'; // Access Token expires in 15 minutes
+const ACCESS_EXPIRY = '24h'; // Access Token expires in 24 hours
 const REFRESH_EXPIRY = '7d'; // Refresh Token expires in 7 days
 
 /**

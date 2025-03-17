@@ -3,10 +3,13 @@ services:
     image: mongo:8.0
     container_name: usp_mongo_dev
     restart: unless-stopped
+    command: ['mongod', '--replSet', 'rs0', '--bind_ip_all']
     volumes:
       - mongo_data_dev:/data/db
-    environment:
-      MONGO_INITDB_DATABASE: 'usp-backend-dev'
+    ports:
+      - '27017:27017'
+    networks:
+      - mongo-net
 
   app:
     build:
@@ -20,11 +23,17 @@ services:
     environment:
       NODE_ENV: development
       PORT: 5000
-      MONGO_URI: mongodb://mongodb:27017/usp-backend-dev
+      MONGO_URI: mongodb://mongodb:27017/usp-backend-dev?replicaSet=rs0
     ports:
       - '5000:5000'
     depends_on:
       - mongodb
+    networks:
+      - mongo-net
 
 volumes:
   mongo_data_dev:
+
+networks:
+  mongo-net:
+    driver: bridge

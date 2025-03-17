@@ -18,25 +18,32 @@ export const loginUser = async (
 ) => {
   try {
     const { email, password } = req.body;
+
     const user = await UserModel.findOne({ email }).select('+password');
     if (!user || !(await user.comparePassword(password))) {
       throw new UnauthorizedError('Invalid email or password');
     }
+
     const { accessToken, refreshToken } = await generateAuthTokens(user);
+
     res.cookie('refreshToken', refreshToken, {
       httpOnly: true,
       sameSite: 'strict',
       maxAge: 7 * 24 * 60 * 60 * 1000,
       secure: process.env.NODE_ENV === 'production',
     });
-    let userDetails: any = { id: user.id, email: user.email, role: user.role };
+
+    let userResponse = {};
+
     if (user.role === 'agent') {
-      const agentDetails = await AgentModel.findOne({ user: user.id });
-      if (agentDetails) {
-        userDetails = { ...userDetails, ...agentDetails.toObject() };
-      }
+      const agent = await AgentModel.findOne({ user: user.id }).lean();
+      if (agent) userResponse = agent;
     }
-    res.status(StatusCodes.OK).json({ accessToken, user: userDetails });
+
+    res.status(StatusCodes.OK).json({
+      accessToken,
+      user: userResponse,
+    });
   } catch (error) {
     next(error);
   }
