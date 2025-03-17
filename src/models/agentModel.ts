@@ -35,9 +35,21 @@ const AgentSchema: Schema = new Schema(
       required: true,
       index: true,
     },
-    parentId: { type: mongoose.Types.ObjectId, ref: 'Agent' },
+    parentId: { type: mongoose.Schema.Types.ObjectId, ref: 'Agent' },
   },
-  { timestamps: true },
+  {
+    timestamps: true,
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true },
+  },
 );
+
+/**
+ * Automatically populate user details on all find queries.
+ */
+AgentSchema.pre(/^find/, function (this: mongoose.Query<any, any>, next) {
+  this.populate('user', 'email role address isActive isEmailVerified');
+  next();
+});
 
 export default mongoose.model<IAgent>('Agent', AgentSchema);
