@@ -22,8 +22,8 @@ export const registerAgentController = async (
   next: NextFunction,
 ) => {
   try {
-    const response = await sendOTPAndRegisterAgent(req.body);
-    res.status(StatusCodes.CREATED).json(response);
+    const agentId = await sendOTPAndRegisterAgent(req.body);
+    res.status(StatusCodes.CREATED).json({ agentId });
   } catch (error) {
     next(error);
   }
@@ -39,8 +39,8 @@ export const verifyOTPController = async (
 ) => {
   try {
     const { email, otp } = req.body;
-    const response = await verifyAgentOTP(email, otp);
-    res.status(StatusCodes.OK).json(response);
+    const success = await verifyAgentOTP(email, otp);
+    res.status(StatusCodes.OK).json({ success });
   } catch (error) {
     next(error);
   }
@@ -57,12 +57,12 @@ export const createSubAgentController = async (
   try {
     const subAgentData = req.body;
     const userId = req.user?.id || '';
-    const { level, id: parentAgentId } = await getAgentByUserId(userId);
+    const { level, _id: parentAgentId } = await getAgentByUserId(userId);
     if (level !== 'parent' && level !== 'sub-agent')
       throw new UnauthorizedError('You are not allowed to create agents');
     if (level === 'sub-agent' && subAgentData.level !== 'agent')
       throw new UnauthorizedError('Sub-agents can only create agents');
-    const subAgent = await createSubAgent(parentAgentId, subAgentData);
+    const subAgent = await createSubAgent(`${parentAgentId}`, subAgentData);
     res.status(StatusCodes.CREATED).json(subAgent);
   } catch (error) {
     next(error);
@@ -78,13 +78,13 @@ export const getAllAgentsController = async (
   next: NextFunction,
 ) => {
   try {
-    const { page = 1, limit = 10 } = req.query;
+    const { page = 1, limit = 10, companyId } = req.query;
     const userId = req.user?.id || '';
     const loggedInAgent = await getAgentByUserId(userId);
     const paginatedResponse = await getAllAgents(
       loggedInAgent.level,
-      loggedInAgent.id,
-      loggedInAgent.company || '',
+      `${loggedInAgent._id}`,
+      companyId ? String(companyId) : String(loggedInAgent.companyId || ''),
       Number(page),
       Number(limit),
     );

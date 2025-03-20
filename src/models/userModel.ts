@@ -14,6 +14,7 @@ export interface IUser extends Document {
   email: string;
   password: string;
   role: 'student' | 'admin' | 'agent';
+  profileImage?: string;
   address?: IAddress;
   isActive: boolean;
   isEmailVerified: boolean;
@@ -36,6 +37,7 @@ const UserSchema: Schema = new Schema(
     email: { type: String, required: true, unique: true, index: true },
     password: { type: String, required: true, select: false },
     role: { type: String, enum: ['student', 'admin', 'agent'], required: true },
+    profileImage: { type: String },
     address: { type: AddressSchema },
     isActive: { type: Boolean, default: true },
     isEmailVerified: { type: Boolean, default: false },

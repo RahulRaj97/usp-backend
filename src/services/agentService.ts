@@ -1,24 +1,55 @@
 import mongoose from 'mongoose';
-import AgentModel, { IAgent } from '../models/agentModel';
-import UserModel, { IUser } from '../models/userModel';
+import { OTPModel } from '../models/otpModel';
+import AgentModel from '../models/agentModel';
+import UserModel from '../models/userModel';
 import { NotFoundError, BadRequestError } from '../utils/appError';
+import { generateOTP } from '../utils/otpHelper';
+import { sendOTPEmail } from './mailService';
+import companyModel from '../models/companyModel';
 
 /**
- * Register a Parent Agent
+ * Register a Parent Agent & Send OTP
  */
-export const createParentAgent = async (data: Partial<IAgent & IUser>) => {
+export const sendOTPAndRegisterAgent = async (data: any) => {
   const session = await mongoose.startSession();
   session.startTransaction();
   try {
-    const { email, password, firstName, lastName, company, phone, address } =
-      data;
+    const {
+      email,
+      password,
+      firstName,
+      lastName,
+      companyName,
+      phone,
+      country,
+    } = data;
+
+    if (!email) throw new BadRequestError('Email is required');
 
     const existingUser = await UserModel.findOne({ email }).session(session);
     if (existingUser)
       throw new BadRequestError('User with this email already exists');
 
+    const existingCompany = await companyModel
+      .findOne({
+        name: companyName,
+      })
+      .session(session);
+
+    if (existingCompany)
+      throw new BadRequestError(`Company ${companyName} already exists`);
+
+    const newCompany = await companyModel.create(
+      [
+        {
+          name: companyName,
+        },
+      ],
+      { session },
+    );
+
     const user = await UserModel.create(
-      [{ email, password, role: 'agent', address }],
+      [{ email, password, role: 'agent', address: { country } }],
       { session },
     );
 
@@ -28,7 +59,7 @@ export const createParentAgent = async (data: Partial<IAgent & IUser>) => {
           user: user[0]._id,
           firstName,
           lastName,
-          company,
+          companyId: newCompany[0]._id,
           phone,
           level: 'parent',
         },
@@ -36,10 +67,20 @@ export const createParentAgent = async (data: Partial<IAgent & IUser>) => {
       { session },
     );
 
+    const otp = generateOTP(5);
+
+    await OTPModel.findOneAndUpdate(
+      { email },
+      { otp, createdAt: new Date() },
+      { upsert: true, new: true },
+    );
+
+    await sendOTPEmail(email, otp);
+
     await session.commitTransaction();
     session.endSession();
 
-    return await AgentModel.findById(agent[0]._id);
+    return agent[0]._id.toString();
   } catch (error) {
     await session.abortTransaction();
     session.endSession();
@@ -48,12 +89,29 @@ export const createParentAgent = async (data: Partial<IAgent & IUser>) => {
 };
 
 /**
- * Create a Sub-Agent or Normal Agent
+ * Verify OTP & Activate Agent
  */
-export const createSubAgent = async (
-  parentAgentId: string,
-  data: Partial<IAgent & IUser>,
-) => {
+export const verifyAgentOTP = async (email: string, otp: string) => {
+  const validOTP = await OTPModel.findOne({ email, otp });
+
+  if (!validOTP) throw new BadRequestError('Invalid or expired OTP');
+
+  const user = await UserModel.findOneAndUpdate(
+    { email },
+    { isEmailVerified: true },
+    { new: true },
+  );
+  if (!user) throw new NotFoundError('User not found');
+
+  await OTPModel.deleteOne({ email });
+
+  return true;
+};
+
+/**
+ * Create a Sub-Agent or Agent
+ */
+export const createSubAgent = async (parentAgentId: string, data: any) => {
   const session = await mongoose.startSession();
   session.startTransaction();
   try {
@@ -82,7 +140,7 @@ export const createSubAgent = async (
           user: user[0]._id,
           firstName,
           lastName,
-          company: parentAgent.company,
+          companyId: parentAgent.companyId,
           level,
           parentId: parentAgent._id,
         },
@@ -93,7 +151,7 @@ export const createSubAgent = async (
     await session.commitTransaction();
     session.endSession();
 
-    return await AgentModel.findById(agent[0]._id);
+    return agent[0].toJSON();
   } catch (error) {
     await session.abortTransaction();
     session.endSession();
@@ -102,27 +160,27 @@ export const createSubAgent = async (
 };
 
 /**
- * Get All Agents (Excluding Logged-in User)
+ * Get All Agents (Admins see all, Parent agents see all in company, Sub-agents see only their assigned agents)
  */
 export const getAllAgents = async (
   level: string,
   parentId: string,
-  company: string,
+  companyId: string,
   page: number,
   limit: number,
 ) => {
   let query: any = {};
 
   if (level === 'parent') {
-    query = { company, _id: { $ne: parentId } }; // Exclude logged-in agent
+    query = { companyId, _id: { $ne: parentId } }; // Fetch all in company except self
   } else if (level === 'sub-agent') {
-    query = { parentId, level: 'agent', _id: { $ne: parentId } }; // Exclude logged-in agent
+    query = { parentId, level: 'agent', _id: { $ne: parentId } }; // Fetch assigned agents
   } else {
     return { agents: [], totalPages: 0 };
   }
 
   const agents = await AgentModel.find(query)
-    .populate('user', 'email isActive address')
+    .lean()
     .skip((page - 1) * limit)
     .limit(limit);
 
@@ -130,11 +188,12 @@ export const getAllAgents = async (
 
   return { agents, totalPages: Math.ceil(totalAgents / limit) };
 };
+
 /**
  * Get an Agent by ID
  */
-export const getAgentById = async (id: string): Promise<IAgent> => {
-  const agent = await AgentModel.findById(id);
+export const getAgentById = async (id: string) => {
+  const agent = await AgentModel.findById(id).lean();
   if (!agent) throw new NotFoundError('Agent not found');
   return agent;
 };
@@ -142,8 +201,8 @@ export const getAgentById = async (id: string): Promise<IAgent> => {
 /**
  * Get an Agent by User ID
  */
-export const getAgentByUserId = async (userId: string): Promise<IAgent> => {
-  const agent = await AgentModel.findOne({ user: userId });
+export const getAgentByUserId = async (userId: string) => {
+  const agent = await AgentModel.findOne({ user: userId }).lean();
   if (!agent) throw new NotFoundError('Agent not found');
   return agent;
 };
@@ -158,7 +217,6 @@ export const toggleAgentStatus = async (agentId: string) => {
   const user = await UserModel.findById(agent.user);
   if (!user) throw new NotFoundError('User not found');
 
-  // Toggle the isActive status
   user.isActive = !user.isActive;
   await user.save();
 
@@ -166,34 +224,36 @@ export const toggleAgentStatus = async (agentId: string) => {
 };
 
 /**
- * Update an Agent
+ * Update an Agent (Allows updating phone, name, address, password, and reassigning to a sub-agent)
  */
-export const updateAgent = async (
-  id: string,
-  updateData: Partial<IAgent & IUser>,
-): Promise<IAgent> => {
+export const updateAgent = async (id: string, updateData: any) => {
   const agent = await AgentModel.findById(id);
   if (!agent) throw new NotFoundError('Agent not found');
 
-  if (updateData.email || updateData.password || updateData.address) {
+  if (updateData.password || updateData.address) {
     await UserModel.findByIdAndUpdate(agent.user, {
-      email: updateData.email,
       password: updateData.password,
       address: updateData.address,
     });
+  }
+
+  if (updateData.parentId) {
+    const newParent = await AgentModel.findById(updateData.parentId);
+    if (!newParent) throw new NotFoundError('New parent agent not found');
   }
 
   const updatedAgent = await AgentModel.findByIdAndUpdate(id, updateData, {
     new: true,
   });
   if (!updatedAgent) throw new NotFoundError('Failed to update agent');
+
   return updatedAgent;
 };
 
 /**
  * Delete an Agent
  */
-export const deleteAgent = async (id: string): Promise<void> => {
+export const deleteAgent = async (id: string) => {
   const agent = await AgentModel.findById(id);
   if (!agent) throw new NotFoundError('Agent not found');
 

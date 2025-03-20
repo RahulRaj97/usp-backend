@@ -8,11 +8,12 @@ import { generateAccessToken, generateRefreshToken } from '../utils/jwt';
 export const createUser = async (userData: Partial<IUser>): Promise<IUser> => {
   const { email } = userData;
   const existingUser = await UserModel.findOne({ email });
+
   if (existingUser) {
     throw new BadRequestError('User already exists');
   }
-  const user = await UserModel.create(userData);
-  return user;
+
+  return await UserModel.create(userData);
 };
 
 /**
@@ -20,9 +21,8 @@ export const createUser = async (userData: Partial<IUser>): Promise<IUser> => {
  */
 export const getUserById = async (userId: string): Promise<IUser> => {
   const user = await UserModel.findById(userId);
-  if (!user) {
-    throw new NotFoundError('User not found');
-  }
+  if (!user) throw new NotFoundError('User not found');
+
   return user;
 };
 
@@ -50,9 +50,11 @@ export const updateUser = async (
   const user = await UserModel.findByIdAndUpdate(userId, updateData, {
     new: true,
   });
+
   if (!user) {
     throw new NotFoundError('User not found');
   }
+
   return user;
 };
 
@@ -72,7 +74,6 @@ export const deleteUser = async (userId: string): Promise<void> => {
 export const generateAuthTokens = async (user: IUser) => {
   const accessToken = generateAccessToken({ id: user.id, role: user.role });
   const refreshToken = generateRefreshToken({ id: user.id, role: user.role });
-  user.refreshToken = refreshToken;
-  await user.save();
+  await UserModel.findByIdAndUpdate(user.id, { refreshToken });
   return { accessToken, refreshToken };
 };

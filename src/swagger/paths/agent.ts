@@ -31,7 +31,8 @@ export const agentPaths: OpenAPIV3.PathsObject = {
     get: {
       tags: ['Agents'],
       summary: 'Get all agents',
-      description: 'Retrieves a list of all agents (Accessible by Admins & Agents)',
+      description:
+        'Retrieves a list of all agents (Accessible by Admins & Agents)',
       security: [{ BearerAuth: [] }],
       responses: {
         200: {
@@ -54,7 +55,6 @@ export const agentPaths: OpenAPIV3.PathsObject = {
       tags: ['Agents'],
       summary: 'Get an agent by ID',
       description: 'Retrieve a specific agent by their unique ID',
-      security: [{ BearerAuth: [] }],
       parameters: [
         {
           name: 'id',

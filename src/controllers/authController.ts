@@ -1,12 +1,12 @@
 import { Request, Response, NextFunction } from 'express';
 
 import UserModel from '../models/userModel';
-import AgentModel from '../models/agentModel';
 import { generateAuthTokens } from '../services/userService';
 
 import { verifyRefreshToken } from '../utils/jwt';
 import { StatusCodes } from '../utils/httpStatuses';
 import { UnauthorizedError } from '../utils/appError';
+import { getAgentByUserId } from '../services/agentService';
 
 /**
  * User Login (Returns Access Token, Role & User Details)
@@ -36,13 +36,13 @@ export const loginUser = async (
     let userResponse = {};
 
     if (user.role === 'agent') {
-      const agent = await AgentModel.findOne({ user: user.id }).lean();
+      const agent = await getAgentByUserId(user.id);
       if (agent) userResponse = agent;
     }
 
     res.status(StatusCodes.OK).json({
       accessToken,
-      user: userResponse,
+      userProfile: userResponse,
     });
   } catch (error) {
     next(error);
