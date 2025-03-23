@@ -7,6 +7,11 @@ import { globalErrorHandler } from './middlewares/errorHandler';
 
 import authRoutes from './routes/authRoutes';
 import agentRoutes from './routes/agentRoutes';
+import companyRoutes from './routes/companyRoutes';
+import studentRoutes from './routes/studentRoutes';
+import universityRoutes from './routes/universityRoutes';
+import programmeRoutes from './routes/programmeRoutes';
+import applicationRoutes from './routes/applicationRoutes';
 
 const app: Application = express();
 
@@ -32,6 +37,11 @@ app.get('/health', (_, res) => {
 
 app.use('/api/auth', authRoutes);
 app.use('/api/agents', agentRoutes);
+app.use('/api/companies', companyRoutes);
+app.use('/api/students', studentRoutes);
+app.use('/api/universities', universityRoutes);
+app.use('/api/programmes', programmeRoutes);
+app.use('/api/applications', applicationRoutes);
 
 app.use(
   (

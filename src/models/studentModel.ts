@@ -20,7 +20,6 @@ export type DocumentType =
 export interface IDocument {
   type: DocumentType;
   fileUrl: string;
-  uploadedAt: Date;
 }
 
 export interface IStudent extends Document {

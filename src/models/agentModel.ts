@@ -11,6 +11,7 @@ export interface IAgent extends Document {
   level: AgentLevel;
   companyId?: mongoose.Types.ObjectId;
   parentId?: mongoose.Types.ObjectId;
+  isVerified: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -33,6 +34,7 @@ const AgentSchema: Schema = new Schema(
     },
     companyId: { type: mongoose.Schema.Types.ObjectId, ref: 'Company' },
     parentId: { type: mongoose.Schema.Types.ObjectId, ref: 'Agent' },
+    isVerified: { type: Boolean, default: false },
   },
   { timestamps: true },
 );

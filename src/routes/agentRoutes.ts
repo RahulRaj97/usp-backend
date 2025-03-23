@@ -9,9 +9,12 @@ import {
   registerAgentController,
   toggleAgentStatusController,
 } from '../controllers/agentController';
+import { uploadToS3 } from '../services/s3Uploader';
 import { authenticate } from '../middlewares/authMiddleware';
 
 const router = Router();
+
+const uploadUserImage = uploadToS3('users');
 
 // Public route - Parent agent registration
 router.post('/register', registerAgentController);
@@ -29,7 +32,12 @@ router.get('/', authenticate, getAllAgentsController);
 router.get('/:id', authenticate, getAgentByIdController);
 
 // Update agent details
-router.put('/:id', authenticate, updateAgentController);
+router.put(
+  '/:id',
+  authenticate,
+  uploadUserImage.single('profileImage'),
+  updateAgentController,
+);
 
 // Toggle agent status (Only Parent or Sub-Agent)
 router.put('/:id/toggle-status', authenticate, toggleAgentStatusController);

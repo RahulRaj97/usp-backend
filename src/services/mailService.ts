@@ -1,7 +1,14 @@
+import fs from 'fs';
+import path from 'path';
 import dotenv from 'dotenv';
 import nodemailer from 'nodemailer';
+import handlebars from 'handlebars';
 
 dotenv.config();
+
+const otpTemplatePath = path.join(__dirname, '../templates/otp-template.html');
+
+const otpTemplate = fs.readFileSync(otpTemplatePath, 'utf-8');
 
 const transporter = nodemailer.createTransport({
   host: process.env.SMTP_HOST,
@@ -13,13 +20,27 @@ const transporter = nodemailer.createTransport({
   },
 });
 
-export const sendOTPEmail = async (email: string, otp: string) => {
+export const sendOTPEmail = async (
+  name: string,
+  email: string,
+  otp: string,
+) => {
+  const template = handlebars.compile(otpTemplate);
+  const otpHtml = otp
+    .split('')
+    .map((char) => `<li>${char}</li>`)
+    .join('');
+  const html = template({
+    name,
+    otp_list: otpHtml,
+    otp_expiry: process.env.OTP_EXPIRATION_MINUTES || 2,
+  });
+
   const mailOptions = {
     from: `"USP Admissions" <${process.env.SMTP_USER}>`,
     to: email,
     subject: 'Verify Your Email - OTP Code',
-    text: `Your OTP is: ${otp}. It is valid for ${process.env.OTP_EXPIRATION_MINUTES} minutes.`,
-    html: `<p>Your OTP is: <strong>${otp}</strong>. It is valid for ${process.env.OTP_EXPIRATION_MINUTES} minutes.</p>`,
+    html,
   };
   await transporter.sendMail(mailOptions);
 };

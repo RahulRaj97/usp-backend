@@ -136,13 +136,16 @@ export const updateAgentController = async (
   next: NextFunction,
 ) => {
   try {
+    const file = req.file as any;
+    if (file?.location) {
+      req.body.profileImage = file.location;
+    }
     const updatedAgent = await updateAgent(req.params.id, req.body);
     res.status(StatusCodes.OK).json(updatedAgent);
   } catch (error) {
     next(error);
   }
 };
-
 /**
  * Delete an Agent (Admin Only)
  */

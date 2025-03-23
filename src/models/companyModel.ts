@@ -9,6 +9,7 @@ export interface ICompany extends Document {
   address?: IAddress;
   createdAt: Date;
   updatedAt: Date;
+  ntn?: string;
 }
 
 const AddressSchema: Schema = new Schema({
@@ -24,6 +25,7 @@ const CompanySchema: Schema = new Schema(
     name: { type: String, required: true, unique: true },
     website: { type: String },
     logo: { type: String },
+    ntn: { type: String },
     address: { type: AddressSchema },
   },
   { timestamps: true },

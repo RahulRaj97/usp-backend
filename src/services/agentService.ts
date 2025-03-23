@@ -75,7 +75,7 @@ export const sendOTPAndRegisterAgent = async (data: any) => {
       { upsert: true, new: true },
     );
 
-    await sendOTPEmail(email, otp);
+    await sendOTPEmail(`${firstName} ${lastName}`, email, otp);
 
     await session.commitTransaction();
     session.endSession();
@@ -92,6 +92,7 @@ export const sendOTPAndRegisterAgent = async (data: any) => {
  * Verify OTP & Activate Agent
  */
 export const verifyAgentOTP = async (email: string, otp: string) => {
+  console.log(email, otp);
   const validOTP = await OTPModel.findOne({ email, otp });
 
   if (!validOTP) throw new BadRequestError('Invalid or expired OTP');
@@ -128,7 +129,14 @@ export const createSubAgent = async (parentAgentId: string, data: any) => {
     const defaultPassword = 'TempPassword@123'; // ⚠️ Must be changed later!
 
     const user = await UserModel.create(
-      [{ email, password: defaultPassword, role: 'agent' }],
+      [
+        {
+          email,
+          password: defaultPassword,
+          role: 'agent',
+          isEmailVerified: true,
+        },
+      ],
       {
         session,
       },
@@ -229,25 +237,22 @@ export const toggleAgentStatus = async (agentId: string) => {
 export const updateAgent = async (id: string, updateData: any) => {
   const agent = await AgentModel.findById(id);
   if (!agent) throw new NotFoundError('Agent not found');
-
-  if (updateData.password || updateData.address) {
+  // Update related user
+  if (updateData.password || updateData.address || updateData.profileImage) {
     await UserModel.findByIdAndUpdate(agent.user, {
-      password: updateData.password,
-      address: updateData.address,
+      ...(updateData.password && { password: updateData.password }),
+      ...(updateData.address && { address: updateData.address }),
+      ...(updateData.profileImage && { profileImage: updateData.profileImage }),
     });
   }
-
   if (updateData.parentId) {
     const newParent = await AgentModel.findById(updateData.parentId);
     if (!newParent) throw new NotFoundError('New parent agent not found');
   }
-
-  const updatedAgent = await AgentModel.findByIdAndUpdate(id, updateData, {
+  await AgentModel.findByIdAndUpdate(id, updateData, {
     new: true,
   });
-  if (!updatedAgent) throw new NotFoundError('Failed to update agent');
-
-  return updatedAgent;
+  return getAgentById(id);
 };
 
 /**
