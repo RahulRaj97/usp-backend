@@ -1,222 +1,158 @@
 <!doctype html>
 <html lang="en">
   <head>
-    <meta charset="UTF-8" />
+    <meta http-equiv="Content-Type" content="text/html charset=UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
-    <link
-      rel="stylesheet"
-      href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/5.1.0/css/bootstrap.min.css"
-    />
-    <link
-      rel="stylesheet"
-      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css"
-    />
     <title>USP Admissions</title>
-    <style>
-      @import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap');
-      :root {
-        --primary-color: #3a4069;
-        --secondary-color: #212121;
-      }
-      h1,
-      h2,
-      h3,
-      h4,
-      h5,
-      h6,
-      p,
-      figure {
-        margin: 0;
-      }
-      a {
-        text-decoration: none;
-        transition: 0.5s ease;
-      }
-      li {
-        list-style: none;
-      }
-      ul {
-        padding: 0;
-        margin: 0%;
-      }
-      body {
-        background-color: #fff;
-        overflow-x: hidden;
-        font-family: 'Inter', sans-serif;
-      }
-      @media (max-width: 1366px) {
-        .container {
-          max-width: 1100px;
-        }
-      }
-      .notification {
-        padding: 90px 0;
-      }
-      .notification .notification-main {
-        padding: 30px;
-        background-color: #f8f7fe;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-      }
-      .notification-content {
-        background-color: #fff;
-        padding: 20px;
-        border-radius: 10px;
-      }
-      .content {
-        margin-top: 20px;
-        padding: 15px;
-        border-radius: 10px;
-        background: #f8f7fe;
-        box-shadow: 0px 0px 8px 0px rgba(0, 0, 0, 0.1);
-      }
-      .content h3.name {
-        font-size: 16px;
-        font-weight: 600;
-        color: var(--secondary-color);
-        border-bottom: 1px solid rgba(112, 101, 239, 0.1);
-        padding-bottom: 15px;
-      }
-      .notification-otp {
-        padding: 25px 0;
-      }
-      .notification-otp ul {
-        display: flex;
-        gap: 10px;
-        align-items: center;
-      }
-      .notification-otp li {
-        border-radius: 5px;
-        border: 1px solid var(--primary-color);
-        padding: 8px 15px;
-        color: #000;
-        font-size: 18px;
-        font-weight: 700;
-      }
-      .content-timer {
-        color: #646464;
-        font-size: 12px;
-        font-weight: 400;
-        border-bottom: 1px solid rgba(112, 101, 239, 0.1);
-        padding-bottom: 15px;
-      }
-      .notification-notice p {
-        color: #646464;
-        font-size: 12px;
-        font-weight: 400;
-      }
-      .notification-notice ul {
-        padding: 10px 0 0 32px;
-      }
-      .notification-notice li {
-        list-style: unset;
-        color: #646464;
-        font-size: 12px;
-        font-weight: 400;
-      }
-      .foot {
-        color: var(--primary-color);
-        font-size: 12px;
-        font-weight: 400;
-      }
-      .notification-content .content h2 {
-        font-size: 30px;
-        font-weight: 700;
-        color: var(--secondary-color);
-        border-bottom: 1px solid rgba(112, 101, 239, 0.1);
-        padding-bottom: 15px;
-      }
-      .notification-content .content span {
-        color: var(--primary-color);
-      }
-      .notification-notice1 h3 {
-        color: var(--secondary-color);
-        font-size: 15px;
-        font-weight: 700;
-      }
-      .notification-notice1 p {
-        color: var(--secondary-color);
-      }
-      .get-started {
-        margin: 30px 0;
-      }
-      .get-started a {
-        background-color: var(--primary-color);
-        color: #fff;
-        padding: 10px 20px;
-        border-radius: 30px;
-      }
-      @media (max-width: 768px) {
-        .notification .notification-main {
-          padding: 18px;
-        }
-        .notification-otp li {
-          padding: 5px 10px;
-          font-size: 15px;
-        }
-      }
-    </style>
   </head>
-  <body>
-    <section class="notification">
-      <div class="container">
-        <div class="col-md-8 mx-auto">
-          <div class="notification-main">
-            <div class="notification-content">
-              <div class="logo text-center">
+
+  <body style="font-family: 'Inter', sans-serif; margin: 0; padding: 0">
+    <table
+      role="presentation"
+      cellspacing="0"
+      cellpadding="0"
+      border="0"
+      style="
+        background-color: #f8f7fe;
+        width: 100%;
+        max-width: 950px;
+        margin: 0 auto;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      "
+    >
+      <tr>
+        <td align="center" style="padding: 30px">
+          <table
+            role="presentation"
+            width="100%"
+            max-width="600px"
+            cellspacing="0"
+            cellpadding="0"
+            border="0"
+            style="background-color: #fff; padding: 30px; border-radius: 10px"
+          >
+            <tr>
+              <td align="center" style="padding: 0 0 20px 0">
                 <img
                   src="https://designmojo.com.au/wp-content/uploads/2025/03/Group-1.png"
-                  alt=""
+                  alt="Logo"
+                  style="max-width: 150px"
                 />
-              </div>
-              <div class="content">
-                <h3 class="name">Hello {{name}}</h3>
-                <p class="text pt-3">
+              </td>
+            </tr>
+            <tr>
+              <td
+                style="
+                  padding: 20px;
+                  background-color: #f8f7fe;
+                  border-radius: 10px;
+                  box-shadow: 0px 0px 8px 0px rgba(0, 0, 0, 0.1);
+                "
+              >
+                <h3
+                  style="
+                    font-size: 17px;
+                    font-weight: 600;
+                    color: #212121;
+                    border-bottom: 1px solid rgba(112, 101, 239, 0.1);
+                    padding-bottom: 15px;
+                  "
+                >
+                  Hello {{NAME}}
+                </h3>
+                <p style="color: #212121; font-size: 17px; font-weight: normal">
                   You requested a One-Time Password (OTP) to verify your account
                   or complete your transaction. Please use the following OTP:
                 </p>
-
-                <div class="notification-otp">
-                  <ul>
-                    {{{otp_list}}}
-                  </ul>
-                </div>
-                <p class="content-timer">
-                  This OTP is valid for {{otp_expiry}} minutes and can only be
+                <table
+                  role="presentation"
+                  width="100%"
+                  cellspacing="0"
+                  cellpadding="0"
+                  border="0"
+                  align="center"
+                  style="padding: 25px 0"
+                >
+                  <tr>
+                    <td>{{OTP_LIST}}</td>
+                  </tr>
+                </table>
+                <p
+                  style="
+                    color: #646464;
+                    font-size: 12px;
+                    border-bottom: 1px solid rgba(112, 101, 239, 0.1);
+                    padding-bottom: 15px;
+                  "
+                >
+                  This OTP is valid for {{OTP_EXPIRY}} minutes and can only be
                   used once.
                 </p>
-                <div class="notification-notice pt-3">
-                  <p>Important:</p>
-                  <ul>
-                    <li>Please do not share your OTP with anyone.</li>
-                    <li>
-                      If you did not request this OTP, please ignore this
-                      message or contact support.
-                    </li>
-                  </ul>
-                </div>
-              </div>
-              <div class="row justify-content-center mt-4">
-                <div class="col-md-2">
-                  <a href="#" class="foot">Blogs</a>
-                </div>
-                <div class="col-md-2">
-                  <a href="#" class="foot">Events</a>
-                </div>
-                <div class="col-md-2">
-                  <a href="#" class="foot">Contact Us</a>
-                </div>
-                <div class="col-md-2">
-                  <a href="#" class="foot">Terms & Condition</a>
-                </div>
-                <div class="col-md-2">
-                  <a href="#" class="foot">Self Training</a>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
+                <p style="color: #646464; font-size: 12px">Important:</p>
+                <p style="color: #646464; font-size: 12px; padding-left: 20px">
+                  &bull; Please do not share your OTP with anyone. <br />
+                  &bull; If you did not request this OTP, please ignore this
+                  message or contact support.
+                </p>
+              </td>
+            </tr>
+            <tr>
+              <td align="center" style="padding-top: 20px">
+                <a
+                  href="#"
+                  style="
+                    text-decoration: none;
+                    color: #3a4069;
+                    font-size: 12px;
+                    margin: 0 10px;
+                  "
+                  >Blogs</a
+                >
+                <a
+                  href="#"
+                  style="
+                    text-decoration: none;
+                    color: #3a4069;
+                    font-size: 12px;
+                    margin: 0 10px;
+                  "
+                  >Events</a
+                >
+                <a
+                  href="#"
+                  style="
+                    text-decoration: none;
+                    color: #3a4069;
+                    font-size: 12px;
+                    margin: 0 10px;
+                  "
+                  >Contact Us</a
+                >
+                <a
+                  href="#"
+                  style="
+                    text-decoration: none;
+                    color: #3a4069;
+                    font-size: 12px;
+                    margin: 0 10px;
+                  "
+                  >Terms & Conditions</a
+                >
+                <a
+                  href="#"
+                  style="
+                    text-decoration: none;
+                    color: #3a4069;
+                    font-size: 12px;
+                    margin: 0 10px;
+                  "
+                  >Self Training</a
+                >
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
   </body>
 </html>

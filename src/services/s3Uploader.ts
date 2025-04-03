@@ -25,7 +25,6 @@ export const uploadToS3 = (folder: string, getSubPath?: (req: any) => string) =>
         const ext = path.extname(file.originalname);
         const filename = `${Date.now()}${ext}`;
         const filePath = `${folder}/${subPath}/${filename}`;
-        console.log('Uploading to S3:', filePath);
         cb(null, filePath);
       },
     }),

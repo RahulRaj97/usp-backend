@@ -22,8 +22,6 @@ export const createProgramme = async (
     services: data.services,
   });
 
-  console.log(programme);
-
   if (imageFiles && imageFiles.length > 0) {
     for (const file of imageFiles) {
       const imageUrl = await uploadFileBufferToS3(

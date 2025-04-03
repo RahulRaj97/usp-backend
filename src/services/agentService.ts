@@ -92,7 +92,6 @@ export const sendOTPAndRegisterAgent = async (data: any) => {
  * Verify OTP & Activate Agent
  */
 export const verifyAgentOTP = async (email: string, otp: string) => {
-  console.log(email, otp);
   const validOTP = await OTPModel.findOne({ email, otp });
 
   if (!validOTP) throw new BadRequestError('Invalid or expired OTP');

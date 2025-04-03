@@ -2,13 +2,12 @@ import fs from 'fs';
 import path from 'path';
 import dotenv from 'dotenv';
 import nodemailer from 'nodemailer';
-import handlebars from 'handlebars';
 
 dotenv.config();
 
 const otpTemplatePath = path.join(__dirname, '../templates/otp-template.html');
 
-const otpTemplate = fs.readFileSync(otpTemplatePath, 'utf-8');
+let otpTemplate = fs.readFileSync(otpTemplatePath, 'utf-8');
 
 const transporter = nodemailer.createTransport({
   host: process.env.SMTP_HOST,
@@ -25,17 +24,18 @@ export const sendOTPEmail = async (
   email: string,
   otp: string,
 ) => {
-  const template = handlebars.compile(otpTemplate);
   const otpHtml = otp
     .split('')
-    .map((char) => `<li>${char}</li>`)
+    .map(
+      (char) =>
+        `<span style="border-radius: 5px; border: 1px solid #3A4069; padding: 8px 12px; font-size: 18px; font-weight: 700; margin: 0 2px;">${char}</span>`,
+    )
     .join('');
-  const html = template({
-    name,
-    otp_list: otpHtml,
-    otp_expiry: process.env.OTP_EXPIRATION_MINUTES || 2,
-  });
-
+  const otpExpiry = process.env.OTP_EXPIRATION_MINUTES || 2;
+  const html = otpTemplate
+    .replace(/{{NAME}}/g, name)
+    .replace(/{{OTP_LIST}}/g, otpHtml)
+    .replace(/{{OTP_EXPIRY}}/g, otpExpiry.toString());
   const mailOptions = {
     from: `"USP Admissions" <${process.env.SMTP_USER}>`,
     to: email,
