@@ -13,9 +13,6 @@ import {
 import { StatusCodes } from '../utils/httpStatuses';
 import { UnauthorizedError } from '../utils/appError';
 
-/**
- * Register a Parent Agent & Send OTP
- */
 export const registerAgentController = async (
   req: Request,
   res: Response,
@@ -29,9 +26,6 @@ export const registerAgentController = async (
   }
 };
 
-/**
- * Verify OTP & Activate Agent
- */
 export const verifyOTPController = async (
   req: Request,
   res: Response,
@@ -46,32 +40,32 @@ export const verifyOTPController = async (
   }
 };
 
-/**
- * Create a Sub-Agent or Normal Agent (Only Parent & Sub-Agents)
- */
-export const createSubAgentController = async (
+export const createAgentController = async (
   req: Request,
   res: Response,
   next: NextFunction,
 ) => {
   try {
-    const subAgentData = req.body;
-    const userId = req.user?.id || '';
-    const { level, _id: parentAgentId } = await getAgentByUserId(userId);
-    if (level !== 'parent' && level !== 'sub-agent')
-      throw new UnauthorizedError('You are not allowed to create agents');
-    if (level === 'sub-agent' && subAgentData.level !== 'agent')
-      throw new UnauthorizedError('Sub-agents can only create agents');
-    const subAgent = await createSubAgent(`${parentAgentId}`, subAgentData);
-    res.status(StatusCodes.CREATED).json(subAgent);
+    const newAgentData = req.body;
+    const loggedUserId = req.user?.id || '';
+    const { level, _id: parentAgentId } = await getAgentByUserId(loggedUserId);
+    if (level === 'admission' || level === 'counsellor')
+      throw new UnauthorizedError('You are not allowed to create Users');
+    if (
+      level === 'manager' &&
+      newAgentData.level !== 'admission' &&
+      newAgentData.level !== 'counsellor'
+    )
+      throw new UnauthorizedError(
+        'Manager can only create Admission or Counsellor',
+      );
+    const newAgent = await createSubAgent(`${parentAgentId}`, newAgentData);
+    res.status(StatusCodes.CREATED).json(newAgent);
   } catch (error) {
     next(error);
   }
 };
 
-/**
- * Get All Agents
- */
 export const getAllAgentsController = async (
   req: Request,
   res: Response,
@@ -94,9 +88,6 @@ export const getAllAgentsController = async (
   }
 };
 
-/**
- * Get Agent by ID
- */
 export const getAgentByIdController = async (
   req: Request,
   res: Response,
@@ -110,9 +101,6 @@ export const getAgentByIdController = async (
   }
 };
 
-/**
- * Toggle Agent Status (Only Parent and Sub-Agent)
- */
 export const toggleAgentStatusController = async (
   req: Request,
   res: Response,
@@ -127,9 +115,6 @@ export const toggleAgentStatusController = async (
   }
 };
 
-/**
- * Update an Agent
- */
 export const updateAgentController = async (
   req: Request,
   res: Response,
@@ -146,9 +131,7 @@ export const updateAgentController = async (
     next(error);
   }
 };
-/**
- * Delete an Agent (Admin Only)
- */
+
 export const deleteAgentController = async (
   req: Request,
   res: Response,

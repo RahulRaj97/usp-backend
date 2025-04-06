@@ -1,3 +1,4 @@
+import studentModel from '../models/studentModel';
 import agentModel from '../models/agentModel';
 import applicationModel, { IApplication } from '../models/applicationModel';
 import { UnauthorizedError } from '../utils/appError';
@@ -47,15 +48,15 @@ export const listApplications = async (
   }
 
   if (user.role === 'admin') {
+    // Admin: no scoping
   } else if (user.role === 'agent') {
-    if (agent.level === 'agent') {
+    if (agent.level === 'admission' || agent.level === 'counsellor') {
       query.agentId = agent._id;
-    } else if (agent.level === 'sub-agent') {
+    } else if (agent.level === 'manager') {
       const subAgents = await agentModel.find({ parentId: agent._id });
       const agentIds = subAgents.map((a) => a._id).concat(agent._id);
-      agentIds.push(agent._id);
       query.agentId = { $in: agentIds };
-    } else if (agent.level === 'parent') {
+    } else if (agent.level === 'owner') {
       query.companyId = agent.companyId;
     } else {
       throw new UnauthorizedError();
@@ -63,6 +64,7 @@ export const listApplications = async (
   } else {
     throw new UnauthorizedError();
   }
+
   const [applications, total] = await Promise.all([
     applicationModel
       .find(query)
@@ -71,8 +73,24 @@ export const listApplications = async (
       .sort({ createdAt: -1 }),
     applicationModel.countDocuments(query),
   ]);
+
+  // ✅ Add studentId from student document (student.user === application.studentId)
+  const enrichedApplications = await Promise.all(
+    applications.map(async (application) => {
+      const student = await studentModel.findOne({
+        _id: application.studentId,
+      });
+      const studentId = student?.studentId || null;
+
+      return {
+        ...application.toObject(),
+        studentIdFriendly: studentId,
+      };
+    }),
+  );
+
   return {
-    applications,
+    applications: enrichedApplications,
     totalPages: Math.ceil(total / limit),
     currentPage: page,
   };

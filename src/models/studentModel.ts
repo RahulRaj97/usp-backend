@@ -36,6 +36,7 @@ export interface IStudent extends Document {
   profileStatus: ProfileStatus;
   education: IEducation[];
   documents: IDocument[];
+  studentId: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -79,6 +80,11 @@ const StudentSchema: Schema = new Schema(
     },
     education: [EducationSchema],
     documents: [DocumentSchema],
+    studentId: {
+      type: String,
+      required: true,
+      unique: true,
+    },
   },
   { timestamps: true },
 );

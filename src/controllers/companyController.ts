@@ -37,7 +37,7 @@ export const getCompanyByIdController = async (
     if (user.role === 'admin') {
     } else if (user.role === 'agent') {
       const agent = await getAgentByUserId(user.id);
-      if (agent.level !== 'parent' || String(agent.companyId) !== companyId) {
+      if (agent.level !== 'owner' || String(agent.companyId) !== companyId) {
         throw new UnauthorizedError('Not allowed to access this company');
       }
     } else {
@@ -67,7 +67,7 @@ export const updateCompanyController = async (
       // allowed
     } else if (user.role === 'agent') {
       const agent = await getAgentByUserId(user.id);
-      if (agent.level !== 'parent' || String(agent.companyId) !== companyId) {
+      if (agent.level !== 'owner' || String(agent.companyId) !== companyId) {
         throw new UnauthorizedError('Not allowed to update this company');
       }
     } else {

@@ -6,6 +6,10 @@ import { NotFoundError } from '../utils/appError';
 import userModel from '../models/userModel';
 import { uploadFileBufferToS3 } from './s3UploadHelpter';
 
+import { getCountryCode } from '../utils/countryCodeMap';
+import { generateStudentId } from '../utils/generateStudentId';
+import companyModel from '../models/companyModel';
+
 export const createStudent = async (data: any, agent: IAgent) => {
   const session = await mongoose.startSession();
   session.startTransaction();
@@ -20,6 +24,12 @@ export const createStudent = async (data: any, agent: IAgent) => {
       passportNumber,
       documentTypes,
     } = data;
+
+    const company = await companyModel.findById(agent.companyId);
+    const fullCountryName = company?.address?.country || '';
+
+    const countryCode = getCountryCode(fullCountryName);
+    const studentId = await generateStudentId(countryCode);
 
     const documentTypesArray = Array.isArray(documentTypes)
       ? documentTypes
@@ -52,7 +62,8 @@ export const createStudent = async (data: any, agent: IAgent) => {
           phone,
           passportNumber,
           education,
-          documents: [], // Add later
+          documents: [],
+          studentId,
         },
       ],
       { session },
@@ -133,9 +144,9 @@ export const listStudents = async (user: any) => {
   const agent = await AgentModel.findOne({ user: user.id });
   if (!agent) throw new NotFoundError('Agent not found');
 
-  if (agent.level === 'parent') {
+  if (agent.level === 'owner') {
     return await StudentModel.find({ companyId: agent.companyId }).lean();
-  } else if (agent.level === 'sub-agent') {
+  } else if (agent.level === 'manager') {
     const subAgents = await AgentModel.find({ parentId: agent._id });
     const agentIds = subAgents.map((a) => a._id).concat(agent._id);
     return await StudentModel.find({ agentId: { $in: agentIds } }).lean();

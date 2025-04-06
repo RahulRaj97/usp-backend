@@ -5,7 +5,7 @@ import {
   updateAgentController,
   getAllAgentsController,
   getAgentByIdController,
-  createSubAgentController,
+  createAgentController,
   registerAgentController,
   toggleAgentStatusController,
 } from '../controllers/agentController';
@@ -23,7 +23,7 @@ router.post('/register', registerAgentController);
 router.post('/verify-otp', verifyOTPController);
 
 // Protected route - Only parent agents can create sub-agents/agents
-router.post('/', authenticate, createSubAgentController);
+router.post('/', authenticate, createAgentController);
 
 // Get all agents (Admin only)
 router.get('/', authenticate, getAllAgentsController);

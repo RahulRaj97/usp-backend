@@ -27,12 +27,31 @@ export const createProgrammeController = async (
 };
 
 export const getAllProgrammesController = async (
-  _req: Request,
+  req: Request,
   res: Response,
   next: NextFunction,
 ) => {
   try {
-    const programmes = await getAllProgrammes();
+    const { programmeType, courseOfStudy, location } = req.query;
+
+    const filters = {
+      programmeType: Array.isArray(programmeType)
+        ? programmeType.map(String)
+        : programmeType
+          ? [String(programmeType)]
+          : [],
+      courseOfStudy: Array.isArray(courseOfStudy)
+        ? courseOfStudy.map(String)
+        : courseOfStudy
+          ? [String(courseOfStudy)]
+          : [],
+      location: Array.isArray(location)
+        ? location.map(String)
+        : location
+          ? [String(location)]
+          : [],
+    };
+    const programmes = await getAllProgrammes(filters);
     res.status(StatusCodes.OK).json(programmes);
   } catch (err) {
     next(err);

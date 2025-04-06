@@ -1,6 +1,12 @@
 import mongoose, { Schema, Document } from 'mongoose';
 
-export type ApplicationStatus = 'pending' | 'approved' | 'rejected';
+export type ApplicationStatus =
+  | 'submitted_to_usp'
+  | 'pending_documents'
+  | 'submitted_to_university'
+  | 'university_query'
+  | 'final_decision'
+  | 'respond_to_offer';
 
 export type ApplicationStage =
   | 'profile_complete'
@@ -52,8 +58,15 @@ const ApplicationSchema: Schema = new Schema<IApplication>(
     ],
     status: {
       type: String,
-      enum: ['pending', 'approved', 'rejected'],
-      default: 'pending',
+      enum: [
+        'submitted_to_usp',
+        'pending_documents',
+        'submitted_to_university',
+        'university_query',
+        'final_decision',
+        'respond_to_offer',
+      ],
+      default: 'submitted_to_usp',
     },
     currentStage: {
       type: String,

@@ -1,6 +1,12 @@
 import programmeModel, { IProgramme } from '../models/programmeModel';
 import { uploadFileBufferToS3 } from './s3UploadHelpter';
 
+interface ProgrammeFilterParams {
+  programmeType: string[];
+  courseOfStudy: string[];
+  location: string[];
+}
+
 export const createProgramme = async (
   data: any,
   imageFiles?: Express.Multer.File[],
@@ -40,8 +46,43 @@ export const createProgramme = async (
   return programme;
 };
 
-export const getAllProgrammes = async (): Promise<IProgramme[]> => {
-  return await programmeModel.find().lean();
+export const getAllProgrammes = async (
+  filters: ProgrammeFilterParams,
+): Promise<IProgramme[]> => {
+  const matchStage: any = {};
+
+  if (filters.programmeType.length > 0) {
+    matchStage.type = { $in: filters.programmeType };
+  }
+
+  if (filters.courseOfStudy.length > 0) {
+    matchStage.subjectArea = { $in: filters.courseOfStudy };
+  }
+
+  const pipeline: any[] = [
+    { $match: matchStage },
+    {
+      $lookup: {
+        from: 'universities',
+        localField: 'universityId',
+        foreignField: '_id',
+        as: 'university',
+      },
+    },
+    { $unwind: '$university' },
+  ];
+
+  if (filters.location.length > 0) {
+    pipeline.push({
+      $match: {
+        'university.address.country': {
+          $in: filters.location.map((loc) => new RegExp(`^${loc}$`, 'i')),
+        },
+      },
+    });
+  }
+
+  return await programmeModel.aggregate(pipeline);
 };
 
 export const getProgrammeById = async (

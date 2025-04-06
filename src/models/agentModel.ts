@@ -1,6 +1,6 @@
 import mongoose, { Schema, Document } from 'mongoose';
 
-export type AgentLevel = 'agent' | 'sub-agent' | 'parent';
+export type AgentLevel = 'owner' | 'manager' | 'admission' | 'counsellor';
 
 export interface IAgent extends Document {
   _id: mongoose.Types.ObjectId;
@@ -29,7 +29,7 @@ const AgentSchema: Schema = new Schema(
     phone: { type: String },
     level: {
       type: String,
-      enum: ['parent', 'sub-agent', 'agent'],
+      enum: ['owner', 'manager', 'admission', 'counsellor'],
       required: true,
     },
     companyId: { type: mongoose.Schema.Types.ObjectId, ref: 'Company' },

@@ -8,7 +8,7 @@ import { sendOTPEmail } from './mailService';
 import companyModel from '../models/companyModel';
 
 /**
- * Register a Parent Agent & Send OTP
+ * Register a Owner Agent & Send OTP
  */
 export const sendOTPAndRegisterAgent = async (data: any) => {
   const session = await mongoose.startSession();
@@ -61,7 +61,7 @@ export const sendOTPAndRegisterAgent = async (data: any) => {
           lastName,
           companyId: newCompany[0]._id,
           phone,
-          level: 'parent',
+          level: 'owner',
         },
       ],
       { session },
@@ -133,7 +133,6 @@ export const createSubAgent = async (parentAgentId: string, data: any) => {
           email,
           password: defaultPassword,
           role: 'agent',
-          isEmailVerified: true,
         },
       ],
       {
@@ -149,11 +148,13 @@ export const createSubAgent = async (parentAgentId: string, data: any) => {
           lastName,
           companyId: parentAgent.companyId,
           level,
-          parentId: parentAgent._id,
+          ...(level !== 'owner' && { parentId: parentAgentId }),
         },
       ],
       { session },
     );
+
+    // Todo: Send email to the new agent with the default password
 
     await session.commitTransaction();
     session.endSession();
@@ -167,7 +168,7 @@ export const createSubAgent = async (parentAgentId: string, data: any) => {
 };
 
 /**
- * Get All Agents (Admins see all, Parent agents see all in company, Sub-agents see only their assigned agents)
+ * Get All Agents
  */
 export const getAllAgents = async (
   level: string,
@@ -178,10 +179,15 @@ export const getAllAgents = async (
 ) => {
   let query: any = {};
 
-  if (level === 'parent') {
+  if (level === 'owner') {
     query = { companyId, _id: { $ne: parentId } }; // Fetch all in company except self
-  } else if (level === 'sub-agent') {
-    query = { parentId, level: 'agent', _id: { $ne: parentId } }; // Fetch assigned agents
+  } else if (level === 'manager') {
+    query = {
+      companyId,
+      parentId,
+      level: { $in: ['admission', 'counsellor'] },
+      _id: { $ne: parentId },
+    };
   } else {
     return { agents: [], totalPages: 0 };
   }
@@ -224,6 +230,9 @@ export const toggleAgentStatus = async (agentId: string) => {
   const user = await UserModel.findById(agent.user);
   if (!user) throw new NotFoundError('User not found');
 
+  if (agent.level === 'owner')
+    throw new BadRequestError('Owner agent cannot be deactivated');
+
   user.isActive = !user.isActive;
   await user.save();
 
@@ -236,13 +245,13 @@ export const toggleAgentStatus = async (agentId: string) => {
 export const updateAgent = async (id: string, updateData: any) => {
   const agent = await AgentModel.findById(id);
   if (!agent) throw new NotFoundError('Agent not found');
-  // Update related user
   if (updateData.password || updateData.address || updateData.profileImage) {
-    await UserModel.findByIdAndUpdate(agent.user, {
-      ...(updateData.password && { password: updateData.password }),
-      ...(updateData.address && { address: updateData.address }),
-      ...(updateData.profileImage && { profileImage: updateData.profileImage }),
-    });
+    const user = await UserModel.findById(agent.user);
+    if (!user) throw new NotFoundError('User not found');
+    if (updateData.password) user.password = updateData.password;
+    if (updateData.address) user.address = updateData.address;
+    if (updateData.profileImage) user.profileImage = updateData.profileImage;
+    await user.save();
   }
   if (updateData.parentId) {
     const newParent = await AgentModel.findById(updateData.parentId);
