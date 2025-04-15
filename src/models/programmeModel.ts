@@ -43,6 +43,8 @@ export interface IProgramme extends Document {
   startDate: Date;
   endDate?: Date;
   tuitionFee: string;
+  applicationFee?: string;
+  intakes?: string[];
   modules: string[];
   entryRequirements: string[];
   services?: string[];
@@ -104,6 +106,8 @@ const ProgrammeSchema: Schema = new Schema(
     startDate: { type: Date, required: true },
     endDate: { type: Date },
     tuitionFee: { type: String, required: true },
+    applicationFee: { type: String },
+    intakes: [{ type: String }],
     modules: [{ type: String }],
     entryRequirements: [{ type: String }],
     services: [{ type: String }],

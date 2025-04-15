@@ -5,6 +5,7 @@ export interface ICompany extends Document {
   _id: mongoose.Types.ObjectId;
   name: string;
   logo?: string;
+  documents?: string[];
   website?: string;
   address?: IAddress;
   createdAt: Date;
@@ -25,6 +26,7 @@ const CompanySchema: Schema = new Schema(
     name: { type: String, required: true, unique: true },
     website: { type: String },
     logo: { type: String },
+    documents: { type: [String] },
     ntn: { type: String },
     address: { type: AddressSchema },
   },

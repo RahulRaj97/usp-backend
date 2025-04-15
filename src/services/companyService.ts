@@ -23,6 +23,7 @@ export const updateCompany = async (
   companyId: string,
   companyData: Partial<ICompany>,
   logoFile?: Express.Multer.File,
+  documentFiles?: Express.Multer.File[],
 ) => {
   if (logoFile) {
     const logoUrl = await uploadFileBufferToS3(
@@ -33,6 +34,26 @@ export const updateCompany = async (
       logoFile.mimetype,
     );
     companyData.logo = logoUrl;
+  }
+
+  if (documentFiles && documentFiles.length > 0) {
+    const documentUrls = [];
+    for (const file of documentFiles) {
+      const documentUrl = await uploadFileBufferToS3(
+        file.buffer,
+        file.originalname,
+        'company-documents',
+        companyId,
+        file.mimetype,
+      );
+      documentUrls.push(documentUrl);
+    }
+
+    if (companyData.documents && Array.isArray(companyData.documents)) {
+      companyData.documents = companyData.documents.concat(documentUrls);
+    } else {
+      companyData.documents = documentUrls;
+    }
   }
 
   const company = await companyModel.findByIdAndUpdate(companyId, companyData, {

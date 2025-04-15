@@ -59,12 +59,16 @@ export const updateCompanyController = async (
     const { id: companyId } = req.params;
     const updateData = req.body;
     const logoFile = req.file;
-
+    const documentFiles =
+      req.files &&
+      (req.files as { [fieldname: string]: Express.Multer.File[] })['documents']
+        ? (req.files as { [fieldname: string]: Express.Multer.File[] })[
+            'documents'
+          ]
+        : [];
     const user = req.user;
     if (!user) throw new UnauthorizedError();
-
     if (user.role === 'admin') {
-      // allowed
     } else if (user.role === 'agent') {
       const agent = await getAgentByUserId(user.id);
       if (agent.level !== 'owner' || String(agent.companyId) !== companyId) {
@@ -73,8 +77,12 @@ export const updateCompanyController = async (
     } else {
       throw new UnauthorizedError();
     }
-
-    const updatedCompany = await updateCompany(companyId, updateData, logoFile);
+    const updatedCompany = await updateCompany(
+      companyId,
+      updateData,
+      logoFile,
+      documentFiles,
+    );
     res.status(StatusCodes.OK).json(updatedCompany);
   } catch (error) {
     next(error);

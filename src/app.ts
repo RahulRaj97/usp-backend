@@ -12,6 +12,7 @@ import studentRoutes from './routes/studentRoutes';
 import universityRoutes from './routes/universityRoutes';
 import programmeRoutes from './routes/programmeRoutes';
 import applicationRoutes from './routes/applicationRoutes';
+import searchRoutes from './routes/searchRoutes';
 
 const app: Application = express();
 
@@ -42,6 +43,7 @@ app.use('/api/students', studentRoutes);
 app.use('/api/universities', universityRoutes);
 app.use('/api/programmes', programmeRoutes);
 app.use('/api/applications', applicationRoutes);
+app.use('/api/search', searchRoutes);
 
 app.use(
   (

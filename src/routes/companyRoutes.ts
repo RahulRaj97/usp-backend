@@ -17,7 +17,10 @@ router.get('/:id', authenticate, getCompanyByIdController);
 router.put(
   '/:id',
   authenticate,
-  upload.single('logo'),
+  upload.fields([
+    { name: 'logo', maxCount: 1 },
+    { name: 'documents', maxCount: 5 },
+  ]),
   updateCompanyController,
 );
 
