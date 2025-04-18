@@ -1,3 +1,4 @@
+import { NotFoundError } from '../utils/appError';
 import programmeModel, { IProgramme } from '../models/programmeModel';
 import { uploadFileBufferToS3 } from './s3UploadHelpter';
 
@@ -165,4 +166,103 @@ export const listProgrammes = async (
   }
 
   return await programmeModel.find(query);
+};
+
+/** DTO for admin create/update */
+export interface AdminProgrammeDto {
+  universityId: string;
+  name: string;
+  description?: string;
+  type: string;
+  subjectArea: string;
+  durationSemesters: number;
+  startDate: Date;
+  endDate?: Date;
+  tuitionFee: string;
+  applicationFee?: string;
+  intakes?: string[];
+  modules: string[];
+  entryRequirements: string[];
+  services?: string[];
+  images?: string[];
+}
+
+/** Admin: create programme */
+export const adminCreateProgramme = async (
+  data: AdminProgrammeDto,
+  imageFiles?: Express.Multer.File[],
+): Promise<IProgramme> => {
+  // reuse existing logic
+  const programme = await createProgramme(data, imageFiles);
+  return programme;
+};
+
+/** Admin: list programmes with same filters as public GET /api/programmes :contentReference[oaicite:0]{index=0}&#8203;:contentReference[oaicite:1]{index=1} */
+export interface AdminProgrammeFilters {
+  universityId?: string;
+  type?: string;
+  subjectArea?: string;
+  startDate?: Date;
+  minDuration?: number;
+  maxDuration?: number;
+  page?: number;
+  limit?: number;
+}
+export const listProgrammesAdmin = async (
+  filters: AdminProgrammeFilters = {},
+) => {
+  const page = filters.page || 1;
+  const limit = filters.limit || 10;
+  const skip = (page - 1) * limit;
+
+  // build same query as listProgrammes, plus pagination
+  const query: any = {};
+  if (filters.universityId) query.universityId = filters.universityId;
+  if (filters.type) query.type = filters.type;
+  if (filters.subjectArea) query.subjectArea = filters.subjectArea;
+  if (filters.minDuration || filters.maxDuration) {
+    query.durationSemesters = {};
+    if (filters.minDuration) query.durationSemesters.$gte = filters.minDuration;
+    if (filters.maxDuration) query.durationSemesters.$lte = filters.maxDuration;
+  }
+  if (filters.startDate) {
+    query.startDate = { $gte: filters.startDate };
+  }
+
+  const [items, total] = await Promise.all([
+    programmeModel.find(query).skip(skip).limit(limit).sort({ createdAt: -1 }),
+    programmeModel.countDocuments(query),
+  ]);
+
+  return {
+    programmes: items,
+    totalPages: Math.ceil(total / limit),
+    currentPage: page,
+  };
+};
+
+/** Admin: get one programme */
+export const adminGetProgrammeById = async (
+  id: string,
+): Promise<IProgramme> => {
+  const prog = await getProgrammeById(id);
+  if (!prog) throw new NotFoundError('Programme not found');
+  return prog;
+};
+
+/** Admin: update programme */
+export const adminUpdateProgramme = async (
+  id: string,
+  data: Partial<AdminProgrammeDto>,
+  imageFiles?: Express.Multer.File[],
+): Promise<IProgramme> => {
+  const updated = await updateProgramme(id, data, imageFiles);
+  if (!updated) throw new NotFoundError('Programme not found');
+  return updated;
+};
+
+/** Admin: delete programme */
+export const adminDeleteProgramme = async (id: string): Promise<void> => {
+  const doc = await programmeModel.findByIdAndDelete(id);
+  if (!doc) throw new NotFoundError('Programme not found');
 };

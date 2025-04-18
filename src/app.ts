@@ -14,6 +14,12 @@ import programmeRoutes from './routes/programmeRoutes';
 import applicationRoutes from './routes/applicationRoutes';
 import searchRoutes from './routes/searchRoutes';
 
+import adminAppRoutes from './routes/admin/applicationAdminRoutes';
+import programmeAdminRoutes from './routes/admin/programmeAdminRoutes';
+import universityAdminRoutes from './routes/admin/universityAdminRoutes';
+import agentAdminRoutes from './routes/admin/agentAdminRoutes';
+import studentAdminRoutes from './routes/admin/studentAdminRoutes';
+
 const app: Application = express();
 
 app.use(express.json());
@@ -44,6 +50,12 @@ app.use('/api/universities', universityRoutes);
 app.use('/api/programmes', programmeRoutes);
 app.use('/api/applications', applicationRoutes);
 app.use('/api/search', searchRoutes);
+
+app.use('/api/admin/applications', adminAppRoutes);
+app.use('/api/admin/programmes', programmeAdminRoutes);
+app.use('/api/admin/universities', universityAdminRoutes);
+app.use('/api/admin/agents', agentAdminRoutes);
+app.use('/api/admin/students', studentAdminRoutes);
 
 app.use(
   (

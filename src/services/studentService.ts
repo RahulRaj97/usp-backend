@@ -1,6 +1,10 @@
 import mongoose from 'mongoose';
 
-import StudentModel, { IDocument } from '../models/studentModel';
+import StudentModel, {
+  Gender,
+  IDocument,
+  IStudent,
+} from '../models/studentModel';
 import AgentModel, { IAgent } from '../models/agentModel';
 import { NotFoundError } from '../utils/appError';
 import userModel from '../models/userModel';
@@ -153,4 +157,80 @@ export const listStudents = async (user: any) => {
   } else {
     return await StudentModel.find({ agentId: agent._id }).lean();
   }
+};
+
+/**
+ * Filters for admin listing of students
+ */
+export interface AdminStudentFilters {
+  firstName?: string;
+  lastName?: string;
+  gender?: Gender;
+  page?: number;
+  limit?: number;
+}
+
+/**
+ * Admin: list students with pagination and filters
+ */
+export const listStudentsAdmin = async (filters: AdminStudentFilters = {}) => {
+  const { firstName, lastName, gender, page = 1, limit = 10 } = filters;
+  const skip = (page - 1) * limit;
+
+  const query: any = {};
+  if (firstName) query.firstName = new RegExp(firstName, 'i');
+  if (lastName) query.lastName = new RegExp(lastName, 'i');
+  if (gender) query.gender = gender;
+
+  const [students, total] = await Promise.all([
+    StudentModel.find(query).lean().skip(skip).limit(limit),
+    StudentModel.countDocuments(query),
+  ]);
+
+  return {
+    students,
+    totalPages: Math.ceil(total / limit),
+    currentPage: page,
+  };
+};
+
+/**
+ * Admin: create a new student under specified agent
+ */
+export const adminCreateStudent = async (
+  data: any,
+  files: Express.Multer.File[] = [],
+) => {
+  // data should include agentId; pass through to existing createStudent
+  const student = await createStudent({ ...data, files }, data.agentId);
+  return student;
+};
+
+/**
+ * Admin: get student by ID
+ */
+export const adminGetStudentById = async (id: string): Promise<IStudent> => {
+  const student = await getStudentById(id);
+  if (!student) throw new NotFoundError('Student not found');
+  return student;
+};
+
+/**
+ * Admin: update student by ID
+ */
+export const adminUpdateStudent = async (
+  id: string,
+  data: any,
+  files: Express.Multer.File[] = [],
+) => {
+  const updated = await updateStudent(id, data, files);
+  if (!updated) throw new NotFoundError('Student not found');
+  return updated;
+};
+
+/**
+ * Admin: delete student by ID
+ */
+export const adminDeleteStudent = async (id: string) => {
+  await deleteStudent(id);
 };

@@ -1,4 +1,5 @@
 import mongoose, { Schema, Document } from 'mongoose';
+import { IAddress } from './userModel';
 
 export type ProgrammeType =
   | 'bachelor'
@@ -32,6 +33,14 @@ export type SubjectArea =
   | 'international_relations'
   | 'data_science';
 
+const AddressSchema = new Schema({
+  street: String,
+  city: String,
+  state: String,
+  postalCode: String,
+  country: String,
+});
+
 export interface IProgramme extends Document {
   _id: mongoose.Types.ObjectId;
   universityId: mongoose.Types.ObjectId;
@@ -42,13 +51,14 @@ export interface IProgramme extends Document {
   durationSemesters: number;
   startDate: Date;
   endDate?: Date;
-  tuitionFee: string;
+  tuitionFee?: string;
   applicationFee?: string;
   intakes?: string[];
   modules: string[];
   entryRequirements: string[];
   services?: string[];
   images?: string[];
+  address?: IAddress;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -105,13 +115,14 @@ const ProgrammeSchema: Schema = new Schema(
     durationSemesters: { type: Number, required: true },
     startDate: { type: Date, required: true },
     endDate: { type: Date },
-    tuitionFee: { type: String, required: true },
+    tuitionFee: { type: String },
     applicationFee: { type: String },
     intakes: [{ type: String }],
     modules: [{ type: String }],
     entryRequirements: [{ type: String }],
     services: [{ type: String }],
     images: [{ type: String }],
+    address: AddressSchema,
   },
   { timestamps: true },
 );

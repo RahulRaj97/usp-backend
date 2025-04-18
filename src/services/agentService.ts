@@ -1,6 +1,6 @@
 import mongoose from 'mongoose';
 import { OTPModel } from '../models/otpModel';
-import AgentModel from '../models/agentModel';
+import AgentModel, { AgentLevel, IAgent } from '../models/agentModel';
 import UserModel from '../models/userModel';
 import { NotFoundError, BadRequestError } from '../utils/appError';
 import { generateOTP } from '../utils/otpHelper';
@@ -272,4 +272,87 @@ export const deleteAgent = async (id: string) => {
 
   await UserModel.findByIdAndDelete(agent.user);
   await AgentModel.findByIdAndDelete(id);
+};
+
+// =====================================================================
+// 1. Extend src/services/agentService.ts with admin wrappers
+// ====================================================================
+
+export interface AdminAgentFilters {
+  role?: AgentLevel;
+  active?: boolean;
+  companyId?: string;
+  search?: string;
+  page?: number;
+  limit?: number;
+}
+
+export const listAgentsAdmin = async (filters: AdminAgentFilters = {}) => {
+  const { role, companyId, search, page = 1, limit = 10 } = filters;
+  const skip = (page - 1) * limit;
+
+  const query: any = {};
+  if (role) query.level = role;
+  if (companyId) query.companyId = companyId;
+  if (search) {
+    const regex = new RegExp(search, 'i');
+    query.$or = [
+      { firstName: regex },
+      { lastName: regex },
+      { 'user.email': regex },
+    ];
+  }
+
+  // Base find; will populate user via schema
+  let agents = await AgentModel.find(query).lean().skip(skip).limit(limit);
+  const total = await AgentModel.countDocuments(query);
+
+  return {
+    agents,
+    totalPages: Math.ceil(total / limit),
+    currentPage: page,
+  };
+};
+
+/** Admin: create an agent with fullName */
+export const adminCreateAgent = async (data: any): Promise<IAgent> => {
+  const {
+    fullName,
+    email,
+    phone,
+    profileImage,
+    address,
+    role,
+    parentId,
+    companyId,
+  } = data;
+
+  const existing = await UserModel.findOne({ email });
+  if (existing) throw new BadRequestError('User already exists');
+
+  const defaultPassword = 'TempPassword@123';
+  const [firstName, ...rest] = fullName.trim().split(' ');
+  const lastName = rest.join(' ');
+
+  // Create user
+  const user = await UserModel.create({
+    email,
+    password: defaultPassword,
+    role: 'agent',
+    profileImage,
+    address,
+  });
+
+  // Create agent document
+  const agent = await AgentModel.create({
+    user: user._id,
+    firstName,
+    lastName,
+    phone,
+    level: role.toLowerCase() as AgentLevel,
+    parentId: role !== 'owner' ? parentId : undefined,
+    companyId,
+  });
+
+  return agent.toJSON() as IAgent;
 };

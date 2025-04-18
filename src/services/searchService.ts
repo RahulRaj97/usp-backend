@@ -7,7 +7,7 @@ import { NotFoundError } from '../utils/appError';
 import { getAgentByUserId } from './agentService';
 
 /**
- * Searches programmes (no restriction), students, and applications
+ * Searches programmes (no restriction) and students
  * using the provided keyword and applies level restrictions.
  *
  * @param keyword - The search keyword.
@@ -27,10 +27,12 @@ export const searchAll = async (keyword: string, user: any) => {
       { tuitionFee: regex },
       { modules: regex },
     ],
-  }).lean();
+  })
+    .limit(10)
+    .lean();
 
   // -------------------------------------------------------
-  // Set up base queries for Students and Applications
+  // Set up base query for Students (apply agent restriction)
   // -------------------------------------------------------
   let studentsQuery: Record<string, any> = {};
 
@@ -52,21 +54,18 @@ export const searchAll = async (keyword: string, user: any) => {
       agentIds.push(agent._id); // include self
       studentsQuery = { agentId: { $in: agentIds } };
     }
-    // If owner: no restrictions on students or applications
+    // Owners have full access so no restrictions are added.
   } else {
-    // Fallback, if role is not recognized, return no results.
+    // Fallback: if role is not recognized, return no results.
     studentsQuery = { _id: null };
   }
 
-  // -------------------------------------------------------
-  // Add search filters to Students query.
-  // For students, we’ll search in firstName, lastName, and studentId.
-  // -------------------------------------------------------
+  // Add search filters for Students, searching in firstName, lastName, and studentId
   const studentSearchCriteria = {
     $or: [{ firstName: regex }, { lastName: regex }, { studentId: regex }],
   };
 
-  // Merge any existing agent-based restrictions with the search criteria
+  // Merge the agent-based restrictions with the search criteria
   if (Object.keys(studentsQuery).length > 0) {
     studentsQuery = { $and: [studentsQuery, studentSearchCriteria] };
   } else {
@@ -74,13 +73,12 @@ export const searchAll = async (keyword: string, user: any) => {
   }
 
   // -------------------------------------------------------
-  // Perform queries in parallel
+  // Execute Students query with a limit of 10 results
   // -------------------------------------------------------
   const [students] = await Promise.all([
-    StudentModel.find(studentsQuery).lean(),
+    StudentModel.find(studentsQuery).limit(10).lean(),
   ]);
 
-  // Return an object containing all search results
   return {
     programmes,
     students,
