@@ -4,7 +4,7 @@ import { authSchemas } from './authSchemas';
 import { agentSchemas } from './agentSchemas';
 import { healthSchemas } from './healthSchemas';
 
-import { adminAuthSchemas } from './adminAuthSchemas';
+import { adminAdminSchemas } from './adminAdminSchemas';
 import { adminApplicationSchemas } from './adminApplicationSchemas';
 import { adminAgentSchemas } from './adminAgentSchemas';
 import { adminCompanySchemas } from './adminCompanySchemas';
@@ -19,7 +19,7 @@ export const allSchemas = {
   ...healthSchemas,
 
   // admin schemas
-  ...adminAuthSchemas,
+  ...adminAdminSchemas,
   ...adminApplicationSchemas,
   ...adminAgentSchemas,
   ...adminCompanySchemas,

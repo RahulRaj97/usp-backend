@@ -32,20 +32,16 @@ export const loginUser = async (
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
-    const isAdminRoute = req.baseUrl.includes('/admin');
-
-    if (isAdminRoute && user.role === 'admin') {
-      // admin login response
-      const adminProfile = await getAdminByUserId(user.id);
-      res.status(StatusCodes.OK).json({
-        message: 'Login successful',
-        token: accessToken,
-        user: adminProfile,
-      });
-    }
-
     // agent / user login response
     let userProfile: any = {};
+
+    if (user.role === 'admin') {
+      // admin login response
+      const adminProfile = await getAdminByUserId(user.id);
+      if (adminProfile) {
+        userProfile = adminProfile;
+      }
+    }
     if (user.role === 'agent') {
       const agent = await getAgentByUserId(user.id);
       if (agent) userProfile = agent;

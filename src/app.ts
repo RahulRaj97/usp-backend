@@ -14,6 +14,7 @@ import programmeRoutes from './routes/programmeRoutes';
 import applicationRoutes from './routes/applicationRoutes';
 import searchRoutes from './routes/searchRoutes';
 
+import adminAdminRoutes from './routes/admin/adminAdminRoutes';
 import adminAppRoutes from './routes/admin/applicationAdminRoutes';
 import programmeAdminRoutes from './routes/admin/programmeAdminRoutes';
 import universityAdminRoutes from './routes/admin/universityAdminRoutes';
@@ -51,6 +52,7 @@ app.use('/api/programmes', programmeRoutes);
 app.use('/api/applications', applicationRoutes);
 app.use('/api/search', searchRoutes);
 
+app.use('/api/admin', adminAdminRoutes);
 app.use('/api/admin/applications', adminAppRoutes);
 app.use('/api/admin/programmes', programmeAdminRoutes);
 app.use('/api/admin/universities', universityAdminRoutes);
