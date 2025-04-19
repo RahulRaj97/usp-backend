@@ -12,6 +12,8 @@ import { adminProgrammeSchemas } from './adminProgrammeSchemas';
 import { adminStudentSchemas } from './adminStudentSchemas';
 import { adminUniversitySchemas } from './adminUniversitySchemas';
 
+import { notificationSchemas } from './notificationSchemas';
+
 export const allSchemas = {
   // existing core schemas
   ...authSchemas,
@@ -26,4 +28,7 @@ export const allSchemas = {
   ...adminProgrammeSchemas,
   ...adminStudentSchemas,
   ...adminUniversitySchemas,
+
+  // notification schemas
+  ...notificationSchemas,
 };

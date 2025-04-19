@@ -13,6 +13,8 @@ import { adminStudentPaths } from './paths/adminStudent';
 import { adminUniversityPaths } from './paths/adminUniversity';
 import { adminApplicationPaths } from './paths/adminApplications';
 
+import { notificationPaths } from './paths/notification';
+
 import { allSchemas } from './schemas';
 
 const swaggerDocument: OpenAPIV3.Document = {
@@ -54,6 +56,9 @@ const swaggerDocument: OpenAPIV3.Document = {
     ...adminStudentPaths,
     ...adminUniversityPaths,
     ...adminApplicationPaths,
+
+    // notification endpoints
+    ...notificationPaths,
   },
 };
 
