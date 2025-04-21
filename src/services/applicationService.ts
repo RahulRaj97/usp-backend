@@ -164,12 +164,24 @@ export const listApplicationsAdmin = async (
       .find(query)
       .skip(skip)
       .limit(limit)
+      .populate('studentId')
+      .lean()
       .sort({ createdAt: -1 }),
     applicationModel.countDocuments(query),
   ]);
 
+  // 2) strip out __v, and rename studentId → student
+  const applications = apps.map((app) => {
+    // pull off studentId and __v; everything else goes into `rest`
+    const { studentId, __v, ...rest } = app as any;
+    return {
+      ...rest,
+      student: studentId, // now your JSON has `student` not `studentId`
+    };
+  });
+
   return {
-    applications: apps,
+    applications,
     totalPages: Math.ceil(total / limit),
     currentPage: page,
   };

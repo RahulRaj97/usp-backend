@@ -1,4 +1,7 @@
 import mongoose, { Schema, Document } from 'mongoose';
+import { customAlphabet } from 'nanoid';
+
+const nano = customAlphabet('ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789', 8);
 
 export type ApplicationStatus =
   | 'submitted_to_usp'
@@ -20,6 +23,8 @@ export type ApplicationStage =
   | 'finalized';
 
 export interface IApplication extends Document {
+  _id: mongoose.Types.ObjectId;
+  applicationCode: string;
   studentId: mongoose.Types.ObjectId;
   agentId: mongoose.Types.ObjectId;
   companyId: mongoose.Types.ObjectId;
@@ -40,7 +45,8 @@ export interface IApplication extends Document {
 
 const ApplicationSchema: Schema = new Schema<IApplication>(
   {
-    studentId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
+    applicationCode: { type: String, required: true, unique: true },
+    studentId: { type: Schema.Types.ObjectId, ref: 'Student', required: true },
     agentId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
     companyId: { type: Schema.Types.ObjectId, ref: 'Company', required: true },
     programmeIds: [
@@ -90,5 +96,12 @@ const ApplicationSchema: Schema = new Schema<IApplication>(
   },
   { timestamps: true },
 );
+
+ApplicationSchema.pre('validate', function (next) {
+  if (this.isNew && !this.applicationCode) {
+    this.applicationCode = `APP-${nano()}`;
+  }
+  next();
+});
 
 export default mongoose.model<IApplication>('Application', ApplicationSchema);
