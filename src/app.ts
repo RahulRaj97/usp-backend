@@ -20,6 +20,7 @@ import programmeAdminRoutes from './routes/admin/programmeAdminRoutes';
 import universityAdminRoutes from './routes/admin/universityAdminRoutes';
 import agentAdminRoutes from './routes/admin/agentAdminRoutes';
 import studentAdminRoutes from './routes/admin/studentAdminRoutes';
+import companyAdminRoutes from './routes/admin/companyAdminRoutes';
 
 import notificationRoutes from './routes/notificationRoutes';
 
@@ -55,6 +56,7 @@ app.use('/api/applications', applicationRoutes);
 app.use('/api/search', searchRoutes);
 
 app.use('/api/admin', adminAdminRoutes);
+app.use('/api/admin/companies', companyAdminRoutes);
 app.use('/api/admin/applications', adminAppRoutes);
 app.use('/api/admin/programmes', programmeAdminRoutes);
 app.use('/api/admin/universities', universityAdminRoutes);

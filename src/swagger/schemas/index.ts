@@ -7,7 +7,7 @@ import { healthSchemas } from './healthSchemas';
 import { adminAdminSchemas } from './adminAdminSchemas';
 import { adminApplicationSchemas } from './adminApplicationSchemas';
 import { adminAgentSchemas } from './adminAgentSchemas';
-import { adminCompanySchemas } from './adminCompanySchemas';
+import { companySchemas as adminCompanySchemas } from './adminCompanySchemas';
 import { adminProgrammeSchemas } from './adminProgrammeSchemas';
 import { adminStudentSchemas } from './adminStudentSchemas';
 import { adminUniversitySchemas } from './adminUniversitySchemas';

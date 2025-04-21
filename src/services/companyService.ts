@@ -63,3 +63,64 @@ export const updateCompany = async (
   if (!company) throw new NotFoundError('Company not found');
   return company;
 };
+
+export interface CompanyFilters {
+  name?: string;
+  country?: string;
+  sortOrder?: 'asc' | 'desc';
+  page?: number;
+  limit?: number;
+}
+
+export interface PaginatedCompanies {
+  companies: ICompany[];
+  totalPages: number;
+  currentPage: number;
+}
+
+/**
+ * Admin: list companies with optional filters, pagination & sorting
+ */
+export const listCompaniesAdmin = async (
+  filters: CompanyFilters,
+): Promise<PaginatedCompanies> => {
+  const query: any = {};
+  if (filters.name) {
+    query.name = new RegExp(filters.name, 'i');
+  }
+  if (filters.country) {
+    query['address.country'] = new RegExp(`^${filters.country}$`, 'i');
+  }
+
+  const page = filters.page && filters.page > 0 ? filters.page : 1;
+  const limit = filters.limit && filters.limit > 0 ? filters.limit : 10;
+  const skip = (page - 1) * limit;
+
+  const [companies, total] = await Promise.all([
+    companyModel.find(query).skip(skip).limit(limit).lean(),
+    companyModel.countDocuments(query),
+  ]);
+
+  return {
+    companies,
+    totalPages: Math.ceil(total / limit),
+    currentPage: page,
+  };
+};
+
+/**
+ * Admin: create a new company
+ */
+export const createCompany = async (
+  data: Partial<ICompany>,
+): Promise<ICompany> => {
+  return await companyModel.create(data);
+};
+
+/**
+ * Admin: delete an existing company
+ */
+export const deleteCompany = async (id: string): Promise<void> => {
+  const deleted = await companyModel.findByIdAndDelete(id);
+  if (!deleted) throw new NotFoundError('Company not found');
+};
