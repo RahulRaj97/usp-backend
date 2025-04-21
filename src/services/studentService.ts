@@ -201,8 +201,10 @@ export const adminCreateStudent = async (
   data: any,
   files: Express.Multer.File[] = [],
 ) => {
-  // data should include agentId; pass through to existing createStudent
-  const student = await createStudent({ ...data, files }, data.agentId);
+  const agentId = data.agentId;
+  const agent = await AgentModel.findById(agentId);
+  if (!agent) throw new NotFoundError('Agent not found');
+  const student = await createStudent({ ...data, files }, agent);
   return student;
 };
 

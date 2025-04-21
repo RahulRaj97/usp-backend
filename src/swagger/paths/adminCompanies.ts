@@ -60,6 +60,12 @@ export const adminCompanyPaths: OpenAPIV3.PathsObject = {
               required: ['name'],
               properties: {
                 name: { type: 'string', example: 'Oxford University' },
+                phone: { type: 'string', example: '+441234567890' },
+                email: {
+                  type: 'string',
+                  format: 'email',
+                  example: 'info@uspadmissions.com',
+                },
                 website: {
                   type: 'string',
                   format: 'uri',
@@ -133,6 +139,8 @@ export const adminCompanyPaths: OpenAPIV3.PathsObject = {
               properties: {
                 name: { type: 'string' },
                 website: { type: 'string', format: 'uri' },
+                email: { type: 'string', format: 'email' },
+                phone: { type: 'string' },
                 ntn: { type: 'string' },
                 address: { $ref: '#/components/schemas/Address' },
                 logo: { type: 'string', format: 'binary' },

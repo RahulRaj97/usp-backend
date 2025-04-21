@@ -17,6 +17,11 @@ export const companySchemas: OpenAPIV3.ComponentsObject['schemas'] = {
       _id: { type: 'string', example: '60d0fe4f5311236168a109cb' },
       name: { type: 'string', example: 'Oxford University' },
       website: { type: 'string', example: 'https://ox.ac.uk' },
+      phone: { type: 'string', example: '+441234567890' },
+      email: {
+        type: 'string',
+        format: 'email',
+      },
       ntn: { type: 'string', example: '123456789' },
       address: { $ref: '#/components/schemas/Address' },
       logo: { type: 'string', example: 'https://s3/.../logo.png' },

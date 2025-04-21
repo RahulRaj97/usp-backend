@@ -8,6 +8,16 @@ import {
 } from '../../services/companyService';
 import { StatusCodes } from '../../utils/httpStatuses';
 
+function parseJSONField<T>(maybeJson: any): T | undefined {
+  if (!maybeJson) return undefined;
+  if (typeof maybeJson === 'string') {
+    try {
+      return JSON.parse(maybeJson) as T;
+    } catch {}
+  }
+  return maybeJson;
+}
+
 export const listCompaniesAdmin = async (
   req: Request,
   res: Response,
@@ -53,10 +63,12 @@ export const createCompanyAdmin = async (
   next: NextFunction,
 ) => {
   try {
+    const body: any = { ...req.body };
     const logoFile = (req.file as Express.Multer.File) || undefined;
+    body.address = parseJSONField(body.address);
     const newCompany = await createCompany({
-      ...req.body,
-      logo: logoFile?.path || req.body.logo,
+      ...body,
+      logo: logoFile?.path ?? body.logo,
     });
     res.status(StatusCodes.CREATED).json(newCompany);
   } catch (err) {
@@ -70,12 +82,16 @@ export const updateCompanyAdmin = async (
   next: NextFunction,
 ) => {
   try {
+    const body: any = { ...req.body };
     const logoFile = (req.file as Express.Multer.File) || undefined;
     const documentFiles =
       (req.files as Record<string, Express.Multer.File[]>)?.documents || [];
+    // parse JSON fields
+    body.address = parseJSONField(body.address);
+    // now call your existing updateCompany
     const updated = await updateCompany(
       req.params.id,
-      req.body,
+      body,
       logoFile,
       documentFiles,
     );
