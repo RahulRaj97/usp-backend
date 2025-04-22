@@ -6,8 +6,7 @@ export const requireAdmin = (
   _res: Response,
   next: NextFunction,
 ) => {
-  if (req.user?.role !== 'admin') {
+  if (req.user?.role !== 'admin')
     throw new UnauthorizedError('Admin access required');
-  }
   next();
 };

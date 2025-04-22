@@ -1,12 +1,8 @@
-// =====================================================================
-// File: src/models/adminModel.ts
-// =====================================================================
 import mongoose, { Schema, Document } from 'mongoose';
 
 export interface IAdmin extends Document {
   _id: mongoose.Types.ObjectId;
   user: mongoose.Types.ObjectId;
-  // Virtuals from User
   email?: string;
   profileImage?: string;
   isActive?: boolean;
@@ -30,12 +26,10 @@ const AdminSchema: Schema = new Schema(
       required: true,
       unique: true,
     },
-    // Additional admin-specific fields could go here (e.g., role-specific extensions)
   },
   { timestamps: true },
 );
 
-// Automatically populate the 'user' field on queries
 AdminSchema.pre(/^find/, function (this: mongoose.Query<any, any>, next) {
   this.populate(
     'user',
@@ -44,7 +38,6 @@ AdminSchema.pre(/^find/, function (this: mongoose.Query<any, any>, next) {
   next();
 });
 
-// When converting to JSON, merge user properties
 AdminSchema.set('toJSON', {
   virtuals: true,
   transform: (_doc, ret: any) => {

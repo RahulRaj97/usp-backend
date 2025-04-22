@@ -4,9 +4,6 @@ import { verifyAccessToken } from '../utils/jwt';
 import { UnauthorizedError } from '../utils/appError';
 import { JwtPayload } from '../types/jwt';
 
-/**
- * Middleware to authenticate user via JWT
- */
 export const authenticate = (
   req: Request,
   _res: Response,

@@ -74,7 +74,14 @@ export const refreshToken = async (
     if (!user || user.refreshToken !== token) {
       throw new UnauthorizedError('Refresh token not recognized');
     }
-    const { accessToken } = await generateAuthTokens(user);
+    const { accessToken, refreshToken: newRefresh } =
+      await generateAuthTokens(user);
+    res.cookie('refreshToken', newRefresh, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    });
     res.status(StatusCodes.OK).json({ accessToken });
   } catch (error) {
     next(error);

@@ -12,7 +12,6 @@ export function globalErrorHandler(
   res: Response,
   _next: NextFunction,
 ): Response {
-  // 1) If it's one of our AppError, respond as defined
   if (err instanceof AppError) {
     return res.status(err.statusCode).json({
       status: 'error',
@@ -21,7 +20,6 @@ export function globalErrorHandler(
     });
   }
 
-  // 2) Mongoose validation errors
   if (err instanceof mongoose.Error.ValidationError) {
     const messages = Object.values(err.errors).map((e) => e.message);
     return res.status(StatusCodes.BAD_REQUEST).json({
@@ -31,7 +29,6 @@ export function globalErrorHandler(
     });
   }
 
-  // 3) Mongoose cast errors (invalid ObjectId, etc.)
   if (err instanceof mongoose.Error.CastError) {
     return res.status(StatusCodes.BAD_REQUEST).json({
       status: 'error',
@@ -40,7 +37,6 @@ export function globalErrorHandler(
     });
   }
 
-  // 4) Mongo duplicate‑key errors
   if (err instanceof MongoServerError && err.code === 11000) {
     // extract the key and value
     const [field] = Object.keys(err.keyPattern || {});
@@ -52,13 +48,11 @@ export function globalErrorHandler(
     });
   }
 
-  // 5) Anything else → 500
   console.error('Unexpected error:', err);
   return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
     status: 'error',
     statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
     message: ReasonPhrases.INTERNAL_SERVER_ERROR,
-    // optionally expose err.message in development:
     ...(process.env.NODE_ENV !== 'production' && { debug: err.message }),
   });
 }

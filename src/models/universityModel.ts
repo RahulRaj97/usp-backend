@@ -10,6 +10,7 @@ export interface IUniversity extends Document {
   phone?: string;
   address?: IAddress;
   description?: string;
+  currency?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -31,6 +32,7 @@ const UniversitySchema = new Schema<IUniversity>(
     phone: String,
     address: AddressSchema,
     description: String,
+    currency: { type: String, default: 'USD' },
   },
   { timestamps: true },
 );

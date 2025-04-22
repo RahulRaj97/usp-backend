@@ -46,9 +46,6 @@ const UserSchema: Schema = new Schema(
   { timestamps: true },
 );
 
-/**
- * Pre-save hook to hash password before saving
- */
 UserSchema.pre<IUser>(
   'save',
   async function (next: (err?: CallbackError) => void) {
@@ -67,9 +64,6 @@ UserSchema.pre<IUser>(
   },
 );
 
-/**
- * Compare password using Argon2
- */
 UserSchema.methods.comparePassword = async function (
   candidatePassword: string,
 ): Promise<boolean> {
