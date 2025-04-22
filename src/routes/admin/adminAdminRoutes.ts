@@ -13,7 +13,7 @@ import {
 const router = Router();
 
 router.post('/login', loginUser);
-router.post('/refresh', authenticate, refreshToken);
+router.post('/refresh', refreshToken);
 router.post('/logout', authenticate, logoutUser);
 router.post('/', createAdminController);
 router.put('/:id', authenticate, updateAdminController);
