@@ -12,6 +12,7 @@ export interface ICompany extends Document {
   address?: IAddress;
   createdAt: Date;
   updatedAt: Date;
+  isActive: boolean;
   ntn?: string;
 }
 
@@ -33,6 +34,7 @@ const CompanySchema: Schema = new Schema(
     documents: { type: [String] },
     ntn: { type: String },
     address: { type: AddressSchema },
+    isActive: { type: Boolean, default: true },
   },
   { timestamps: true },
 );

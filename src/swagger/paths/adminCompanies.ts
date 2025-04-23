@@ -22,6 +22,12 @@ export const adminCompanyPaths: OpenAPIV3.PathsObject = {
           description: 'Filter by country',
         },
         {
+          name: 'isActive',
+          in: 'query',
+          schema: {type: 'boolean', default: true},
+          description: 'Filter by active'
+        },
+        {
           name: 'page',
           in: 'query',
           schema: { type: 'integer', default: 1 },
@@ -140,6 +146,7 @@ export const adminCompanyPaths: OpenAPIV3.PathsObject = {
                 name: { type: 'string' },
                 website: { type: 'string', format: 'uri' },
                 email: { type: 'string', format: 'email' },
+                isActive: { type: 'boolean' },
                 phone: { type: 'string' },
                 ntn: { type: 'string' },
                 address: { $ref: '#/components/schemas/Address' },

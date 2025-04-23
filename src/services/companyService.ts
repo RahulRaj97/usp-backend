@@ -70,6 +70,7 @@ export interface CompanyFilters {
   sortOrder?: 'asc' | 'desc';
   page?: number;
   limit?: number;
+  isActive?: boolean;
 }
 
 export interface PaginatedCompanies {
@@ -90,6 +91,9 @@ export const listCompaniesAdmin = async (
   }
   if (filters.country) {
     query['address.country'] = new RegExp(`^${filters.country}$`, 'i');
+  }
+  if (filters.isActive) {
+    query.isActive = filters.isActive;
   }
 
   const page = filters.page && filters.page > 0 ? filters.page : 1;

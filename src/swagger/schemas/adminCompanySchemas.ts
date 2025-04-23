@@ -18,6 +18,7 @@ export const companySchemas: OpenAPIV3.ComponentsObject['schemas'] = {
       name: { type: 'string', example: 'Oxford University' },
       website: { type: 'string', example: 'https://ox.ac.uk' },
       phone: { type: 'string', example: '+441234567890' },
+      isActive: { type: 'boolean', example: true },
       email: {
         type: 'string',
         format: 'email',
