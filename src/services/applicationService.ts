@@ -161,7 +161,6 @@ export async function withdrawApplication(
 export interface AdminApplicationDto {
   studentId: string;
   agentId: string;
-  companyId: string;
   programmeIds: string[];
   priorityMapping: { programmeId: string; priority: number }[];
   notes?: string;
@@ -174,8 +173,11 @@ export interface AdminApplicationDto {
 export async function adminCreateApplication(
   dto: AdminApplicationDto,
 ): Promise<EnrichedApp> {
+  const agent = await getAgentById(dto.agentId);
+  if (!agent) throw new UnauthorizedError('Agent not found');
   const app = await applicationModel.create({
     ...dto,
+    companyId: agent.companyId,
     submittedAt: new Date(),
     isWithdrawn: false,
   });
