@@ -12,9 +12,22 @@ export const createAdminController = async (
   next: NextFunction,
 ) => {
   try {
-    // 1) parse address JSON if sent as string
-    if (req.body.address && typeof req.body.address === 'string') {
-      req.body.address = JSON.parse(req.body.address);
+    if (typeof req.body.address === 'string') {
+      const raw = req.body.address.trim();
+      if (raw === '') {
+        // no address provided
+        delete req.body.address;
+      } else {
+        try {
+          req.body.address = JSON.parse(raw);
+        } catch {
+          res.status(400).json({
+            status: 'error',
+            statusCode: 400,
+            message: 'Invalid JSON in "address" field',
+          });
+        }
+      }
     }
 
     // 2) extract the raw file (in memory)
@@ -50,9 +63,22 @@ export const updateAdminController = async (
   next: NextFunction,
 ) => {
   try {
-    // parse address JSON
-    if (req.body.address && typeof req.body.address === 'string') {
-      req.body.address = JSON.parse(req.body.address);
+    if (typeof req.body.address === 'string') {
+      const raw = req.body.address.trim();
+      if (raw === '') {
+        // no address provided
+        delete req.body.address;
+      } else {
+        try {
+          req.body.address = JSON.parse(raw);
+        } catch {
+          res.status(400).json({
+            status: 'error',
+            statusCode: 400,
+            message: 'Invalid JSON in "address" field',
+          });
+        }
+      }
     }
 
     // if multer-s3 placed location on req.file, copy it into body

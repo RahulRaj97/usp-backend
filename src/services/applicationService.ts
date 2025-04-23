@@ -16,6 +16,18 @@ interface ApplicationFilters {
   studentId?: string;
 }
 
+// helper to fetch & transform one doc:
+async function enrichOneApplication(id: string) {
+  const doc = await applicationModel.findById(id).populate('studentId').lean();
+  if (!doc) throw new NotFoundError('Application not found');
+
+  const { studentId, __v, ...rest } = doc as any;
+  return {
+    ...rest,
+    student: studentId,
+  } as IApplication & { student: any };
+}
+
 export const createApplication = async (
   agentId: string,
   studentId: string,
@@ -24,13 +36,14 @@ export const createApplication = async (
 ): Promise<IApplication> => {
   const agent = await getAgentById(agentId);
   if (!agent) throw new UnauthorizedError('Agent not found');
-  return await applicationModel.create({
+  const app = await applicationModel.create({
     studentId,
     agentId: agent._id,
     companyId: agent.companyId,
     programmeIds,
     priorityMapping,
   });
+  return enrichOneApplication(app._id.toString());
 };
 
 export const listApplications = async (
@@ -129,7 +142,7 @@ export const adminCreateApplication = async (
     isWithdrawn: false,
     submittedAt: new Date(),
   });
-  return app;
+  return enrichOneApplication(app._id.toString());
 };
 
 /**
@@ -198,7 +211,7 @@ export const adminUpdateApplication = async (
     new: true,
   });
   if (!updated) throw new NotFoundError('Application not found');
-  return updated;
+  return enrichOneApplication(id);
 };
 
 /**

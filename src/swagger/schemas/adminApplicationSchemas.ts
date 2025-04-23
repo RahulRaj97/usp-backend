@@ -5,28 +5,31 @@ export const adminApplicationSchemas: OpenAPIV3.ComponentsObject['schemas'] = {
   CreateApplicationRequest: {
     type: 'object',
     properties: {
-      studentId: { type: 'string', example: '60d0fe4f5311236168a109ca' },
-      agentId: { type: 'string', example: '60d0fe4f5311236168a109cb' },
-      companyId: { type: 'string', example: '60d0fe4f5311236168a109cc' },
+      studentId: { type: 'string', example: '67f2acf66d01ee19b538f95d' },
+      agentId: { type: 'string', example: '67f279a78fd336d654ebb030' },
+      companyId: { type: 'string', example: '67f279a78fd336d654ebb02b' },
       programmeIds: {
         type: 'array',
-        items: { type: 'string', example: '60d0fe4f5311236168a109cd' },
+        items: { type: 'string', example: '67e07ebfa9bf5773c6e65a23' },
       },
       priorityMapping: {
         type: 'array',
         items: {
           type: 'object',
+          required: ['programmeId', 'priority'],
           properties: {
             programmeId: {
               type: 'string',
-              example: '60d0fe4f5311236168a109cd',
+              example: '67e07ebfa9bf5773c6e65a23',
             },
             priority: { type: 'integer', example: 1, minimum: 1, maximum: 3 },
           },
-          required: ['programmeId', 'priority'],
         },
       },
-      notes: { type: 'string', example: 'Application for Fall intake' },
+      notes: {
+        type: 'string',
+        example: 'Application for Fall intake',
+      },
       supportingDocuments: {
         type: 'array',
         items: {
@@ -73,7 +76,10 @@ export const adminApplicationSchemas: OpenAPIV3.ComponentsObject['schemas'] = {
           'finalized',
         ],
       },
-      notes: { type: 'string', example: 'Submitted to university portal' },
+      notes: {
+        type: 'string',
+        example: 'Submitted to university portal',
+      },
       supportingDocuments: {
         type: 'array',
         items: {
@@ -88,13 +94,16 @@ export const adminApplicationSchemas: OpenAPIV3.ComponentsObject['schemas'] = {
   Application: {
     type: 'object',
     properties: {
-      id: { type: 'string', example: '60d0fe4f5311236168a109ce' },
-      studentId: { type: 'string', example: '60d0fe4f5311236168a109ca' },
-      agentId: { type: 'string', example: '60d0fe4f5311236168a109cb' },
-      companyId: { type: 'string', example: '60d0fe4f5311236168a109cc' },
+      _id: { type: 'string', example: '6806759e728ad12632b3a082' },
+      applicationCode: {
+        type: 'string',
+        example: 'APP-8S9YG329',
+      },
+      agentId: { type: 'string', example: '67f279a78fd336d654ebb030' },
+      companyId: { type: 'string', example: '67f279a78fd336d654ebb02b' },
       programmeIds: {
         type: 'array',
-        items: { type: 'string', example: '60d0fe4f5311236168a109cd' },
+        items: { type: 'string', example: '67e07ebfa9bf5773c6e65a23' },
       },
       priorityMapping: {
         type: 'array',
@@ -103,9 +112,9 @@ export const adminApplicationSchemas: OpenAPIV3.ComponentsObject['schemas'] = {
           properties: {
             programmeId: {
               type: 'string',
-              example: '60d0fe4f5311236168a109cd',
+              example: '67e07ebfa9bf5773c6e65a23',
             },
-            priority: { type: 'integer', example: 2 },
+            priority: { type: 'integer', example: 1 },
           },
         },
       },
@@ -143,19 +152,35 @@ export const adminApplicationSchemas: OpenAPIV3.ComponentsObject['schemas'] = {
       submittedAt: {
         type: 'string',
         format: 'date-time',
-        example: '2025-04-18T12:34:56Z',
+        example: '2025-04-21T16:43:10.256Z',
       },
+      student: { $ref: '#/components/schemas/Student' },
       createdAt: {
         type: 'string',
         format: 'date-time',
-        example: '2025-04-18T12:00:00Z',
+        example: '2025-04-21T16:43:10.265Z',
       },
       updatedAt: {
         type: 'string',
         format: 'date-time',
-        example: '2025-04-18T12:30:00Z',
+        example: '2025-04-21T16:43:10.265Z',
       },
     },
+    required: [
+      '_id',
+      'applicationCode',
+      'agentId',
+      'companyId',
+      'programmeIds',
+      'priorityMapping',
+      'status',
+      'currentStage',
+      'isWithdrawn',
+      'submittedAt',
+      'student',
+      'createdAt',
+      'updatedAt',
+    ],
   },
 
   PaginatedApplications: {
