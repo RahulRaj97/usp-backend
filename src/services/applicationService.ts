@@ -114,7 +114,7 @@ export const listApplications = async (
 };
 
 export const getApplicationById = async (id: string) => {
-  return await applicationModel.findById(id);
+  return await enrichOneApplication(id);
 };
 
 /**
