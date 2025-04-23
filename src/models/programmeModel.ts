@@ -1,72 +1,165 @@
 import mongoose, { Schema, Document } from 'mongoose';
-import { IAddress } from './userModel';
 
-export type ProgrammeType =
-  | 'bachelor'
-  | 'master'
-  | 'phd'
-  | 'associate'
-  | 'diploma'
-  | 'certificate'
-  | 'exchange'
-  | 'foundation'
-  | 'executive';
+export const TYPE_VALUES = [
+  '3_year_bachelors',
+  'advanced_diploma',
+  'bachelors',
+  'certificate',
+  'diploma',
+  'doctoral_phd',
+  'english',
+  'integrated_masters',
+  'masters_degree',
+  'post_graduate_certificate',
+  'post_graduate_diploma',
+  'topup_degree',
+] as const;
+export type ProgrammeType = (typeof TYPE_VALUES)[number];
 
-export type SubjectArea =
-  | 'computer_science'
-  | 'engineering'
-  | 'business'
-  | 'agriculture'
-  | 'arts'
-  | 'education'
-  | 'law'
-  | 'medicine'
-  | 'social_sciences'
-  | 'natural_sciences'
-  | 'environmental_science'
-  | 'mathematics'
-  | 'economics'
-  | 'design'
-  | 'media'
-  | 'philosophy'
-  | 'psychology'
-  | 'international_relations'
-  | 'data_science';
+export const DELIVERY_METHODS = ['in_class', 'online', 'blended'] as const;
+export type DeliveryMethod = (typeof DELIVERY_METHODS)[number];
+export interface IGRERequirements {
+  requirementType?: 'none' | 'verbal' | 'quantitative' | 'writing' | 'overall';
+  minVerbal?: number;
+  minQuantitative?: number;
+  minWriting?: number;
+  minTotal?: number;
+}
 
-const AddressSchema = new Schema({
-  street: String,
-  city: String,
-  state: String,
-  postalCode: String,
-  country: String,
-});
+const GREReqSchema = new Schema<IGRERequirements>(
+  {
+    requirementType: {
+      type: String,
+      enum: ['none', 'verbal', 'quantitative', 'writing', 'overall'],
+    },
+    minVerbal: Number,
+    minQuantitative: Number,
+    minWriting: Number,
+    minTotal: Number,
+  },
+  { _id: false },
+);
+
+export interface IProgramRequirement {
+  englishScoreRequired?: boolean;
+  minGpa?: number;
+  otherRequirements?: string[];
+  // TOEFL
+  minToeflReading?: number;
+  minToeflWriting?: number;
+  minToeflListening?: number;
+  minToeflSpeaking?: number;
+  minToeflTotal?: number;
+  // IELTS
+  minIeltsReading?: number;
+  minIeltsWriting?: number;
+  minIeltsListening?: number;
+  minIeltsSpeaking?: number;
+  minIeltsAverage?: number;
+  minIeltsAnyBand?: number;
+  minIeltsAnyBandCount?: number;
+  // Duolingo
+  minDuolingoScore?: number;
+  minDuolingoLiteracyScore?: number;
+  minDuolingoConversationScore?: number;
+  minDuolingoComprehensionScore?: number;
+  minDuolingoProductionScore?: number;
+  // PTE
+  minPteListening?: number;
+  minPteReading?: number;
+  minPteSpeaking?: number;
+  minPteWriting?: number;
+  minPteOverall?: number;
+  // GRE
+  greRequirements?: IGRERequirements;
+}
+
+const ProgramReqSchema = new Schema<IProgramRequirement>(
+  {
+    englishScoreRequired: Boolean,
+    minGpa: Number,
+    otherRequirements: { type: [String], default: [] },
+    minToeflReading: Number,
+    minToeflWriting: Number,
+    minToeflListening: Number,
+    minToeflSpeaking: Number,
+    minToeflTotal: Number,
+    minIeltsReading: Number,
+    minIeltsWriting: Number,
+    minIeltsListening: Number,
+    minIeltsSpeaking: Number,
+    minIeltsAverage: Number,
+    minIeltsAnyBand: Number,
+    minIeltsAnyBandCount: Number,
+    minDuolingoScore: Number,
+    minDuolingoLiteracyScore: Number,
+    minDuolingoConversationScore: Number,
+    minDuolingoComprehensionScore: Number,
+    minDuolingoProductionScore: Number,
+    minPteListening: Number,
+    minPteReading: Number,
+    minPteSpeaking: Number,
+    minPteWriting: Number,
+    minPteOverall: Number,
+    greRequirements: { type: GREReqSchema, default: {} },
+  },
+  { _id: false },
+);
+
+export interface IProgramIntake {
+  openDate?: Date;
+  submissionDeadline?: Date;
+  available: boolean;
+  acceptingNewApps: boolean;
+  status: 'open' | 'closed' | 'likely_open';
+  openTime?: string;
+  deadlineTime?: string;
+}
+
+const IntakeSchema = new Schema<IProgramIntake>(
+  {
+    openDate: Date,
+    submissionDeadline: Date,
+    available: { type: Boolean, default: true },
+    acceptingNewApps: { type: Boolean, default: true },
+    status: {
+      type: String,
+      enum: ['open', 'closed', 'likely_open'],
+      required: true,
+    },
+    openTime: String,
+    deadlineTime: String,
+  },
+  { _id: false },
+);
 
 export interface IProgramme extends Document {
-  _id: mongoose.Types.ObjectId;
   universityId: mongoose.Types.ObjectId;
   name: string;
-  description?: string;
   type: ProgrammeType;
-  subjectArea: SubjectArea;
-  durationSemesters: number;
-  startDate: Date;
-  endDate?: Date;
-  tuitionFee?: string;
-  applicationFee?: string;
-  intakes?: string[];
+  lengthBreakdown?: string;
+  description?: string;
+  deliveryMethod?: DeliveryMethod;
+  tuitionFee?: number;
+  applicationFee?: number;
+  otherFees: string[];
+  published?: boolean;
+  metaTitle?: string;
+  metaDescription?: string;
+  metaKeywords: string[];
+  intakes: IProgramIntake[];
+  programRequirement?: IProgramRequirement;
   modules: string[];
-  entryRequirements: string[];
-  services?: string[];
-  images?: string[];
-  address?: IAddress;
+  services: string[];
+  images: string[];
   createdAt: Date;
   updatedAt: Date;
 }
 
-const ProgrammeSchema: Schema = new Schema(
+const ProgrammeSchema = new Schema<IProgramme>(
   {
     universityId: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: Schema.Types.ObjectId,
       ref: 'University',
       required: true,
     },
@@ -74,63 +167,47 @@ const ProgrammeSchema: Schema = new Schema(
     description: { type: String },
     type: {
       type: String,
-      enum: [
-        'bachelor',
-        'master',
-        'phd',
-        'associate',
-        'diploma',
-        'certificate',
-        'exchange',
-        'foundation',
-        'executive',
-      ],
+      enum: TYPE_VALUES,
       required: true,
     },
-    subjectArea: {
+    lengthBreakdown: { type: String },
+    deliveryMethod: {
       type: String,
-      enum: [
-        'computer_science',
-        'engineering',
-        'business',
-        'agriculture',
-        'arts',
-        'education',
-        'law',
-        'medicine',
-        'social_sciences',
-        'natural_sciences',
-        'environmental_science',
-        'mathematics',
-        'economics',
-        'design',
-        'media',
-        'philosophy',
-        'psychology',
-        'international_relations',
-        'data_science',
-      ],
-      required: true,
+      enum: DELIVERY_METHODS,
+      default: 'in_class',
     },
-    durationSemesters: { type: Number, required: true },
-    startDate: { type: Date, required: true },
-    endDate: { type: Date },
-    tuitionFee: { type: String },
-    applicationFee: { type: String },
-    intakes: [{ type: String }],
-    modules: [{ type: String }],
-    entryRequirements: [{ type: String }],
-    services: [{ type: String }],
-    images: [{ type: String }],
-    address: AddressSchema,
+    tuitionFee: Number,
+    applicationFee: Number,
+    otherFees: { type: [String], default: [] },
+    published: Boolean,
+    metaTitle: String,
+    metaDescription: String,
+    metaKeywords: { type: [String], default: [] },
+    intakes: { type: [IntakeSchema], default: [] },
+    programRequirement: { type: ProgramReqSchema, default: {} },
+    modules: { type: [String], default: [] },
+    services: { type: [String], default: [] },
+    images: { type: [String], default: [] },
   },
   { timestamps: true },
 );
 
+ProgrammeSchema.set('toJSON', {
+  virtuals: true,
+  transform(_, ret) {
+    ret.id = ret._id;
+    delete ret._id;
+    delete ret.__v;
+  },
+});
+
+ProgrammeSchema.index({ type: 1 });
+ProgrammeSchema.index({ name: 'text' });
+
 ProgrammeSchema.pre(/^find/, function (this: mongoose.Query<any, any>, next) {
   this.populate(
     'universityId',
-    'name logo website contactEmail phone address description',
+    'name logo website contactEmail phone address currency',
   );
   next();
 });

@@ -1,103 +1,39 @@
-// File: src/swagger/paths/adminProgrammes.ts
+// src/swagger/paths/adminProgrammePaths.ts
 import { OpenAPIV3 } from 'openapi-types';
 
 export const adminProgrammePaths: OpenAPIV3.PathsObject = {
   '/api/admin/programmes': {
     get: {
-      tags: ['Admin Programmes'],
-      summary: 'List Programmes (Admin)',
-      description:
-        'Retrieve a paginated list of programmes. Supports filtering by universityId, type, subjectArea, startDate, minDuration, maxDuration.',
+      tags: ['AdminProgrammes'],
+      summary: 'List all programmes (admin)',
       security: [{ BearerAuth: [] }],
       parameters: [
-        {
-          name: 'universityId',
-          in: 'query',
-          schema: { type: 'string' },
-          description: 'Filter by University ObjectId',
-        },
+        { name: 'search', in: 'query', schema: { type: 'string' } },
+        { name: 'universityId', in: 'query', schema: { type: 'string' } },
         {
           name: 'type',
           in: 'query',
-          schema: {
-            type: 'string',
-            enum: [
-              'bachelor',
-              'master',
-              'phd',
-              'associate',
-              'diploma',
-              'certificate',
-              'exchange',
-              'foundation',
-              'executive',
-            ],
-          },
-          description: 'Programme type',
+          schema: { $ref: '#/components/schemas/ProgrammeType' },
         },
         {
-          name: 'subjectArea',
+          name: 'deliveryMethod',
           in: 'query',
-          schema: {
-            type: 'string',
-            enum: [
-              'computer_science',
-              'engineering',
-              'business',
-              'agriculture',
-              'arts',
-              'education',
-              'law',
-              'medicine',
-              'social_sciences',
-              'natural_sciences',
-              'environmental_science',
-              'mathematics',
-              'economics',
-              'design',
-              'media',
-              'philosophy',
-              'psychology',
-              'international_relations',
-              'data_science',
-            ],
-          },
-          description: 'Filter by subject area',
+          schema: { $ref: '#/components/schemas/DeliveryMethod' },
         },
-        {
-          name: 'startDate',
-          in: 'query',
-          schema: { type: 'string', format: 'date' },
-          description:
-            'Only include programmes starting on or after this date (YYYY-MM-DD)',
-        },
-        {
-          name: 'minDuration',
-          in: 'query',
-          schema: { type: 'integer' },
-          description: 'Minimum duration (in semesters)',
-        },
-        {
-          name: 'maxDuration',
-          in: 'query',
-          schema: { type: 'integer' },
-          description: 'Maximum duration (in semesters)',
-        },
-        {
-          name: 'page',
-          in: 'query',
-          schema: { type: 'integer', default: 1 },
-          description: 'Page number',
-        },
+        { name: 'openIntakeOnly', in: 'query', schema: { type: 'boolean' } },
+        { name: 'minTuition', in: 'query', schema: { type: 'number' } },
+        { name: 'maxTuition', in: 'query', schema: { type: 'number' } },
+        { name: 'minApplicationFee', in: 'query', schema: { type: 'number' } },
+        { name: 'maxApplicationFee', in: 'query', schema: { type: 'number' } },
+        { name: 'page', in: 'query', schema: { type: 'integer', default: 1 } },
         {
           name: 'limit',
           in: 'query',
-          schema: { type: 'integer', default: 10 },
-          description: 'Items per page',
+          schema: { type: 'integer', default: 20 },
         },
       ],
       responses: {
-        200: {
+        '200': {
           description: 'Paginated list of programmes',
           content: {
             'application/json': {
@@ -105,41 +41,40 @@ export const adminProgrammePaths: OpenAPIV3.PathsObject = {
             },
           },
         },
-        401: { description: 'Unauthorized' },
+        '401': { $ref: '#/components/responses/Unauthorized' },
       },
     },
     post: {
-      tags: ['Admin Programmes'],
-      summary: 'Create Programme (Admin)',
-      description: 'Create a new programme, including uploading images.',
+      tags: ['AdminProgrammes'],
+      summary: 'Create a programme',
       security: [{ BearerAuth: [] }],
       requestBody: {
         required: true,
         content: {
           'multipart/form-data': {
-            schema: { $ref: '#/components/schemas/CreateProgrammeRequest' },
+            schema: { $ref: '#/components/schemas/CreateProgrammePayload' },
           },
         },
       },
       responses: {
-        201: {
-          description: 'Programme created successfully',
+        '201': {
+          description: 'Programme created',
           content: {
             'application/json': {
               schema: { $ref: '#/components/schemas/Programme' },
             },
           },
         },
-        400: { description: 'Invalid request body' },
-        401: { description: 'Unauthorized' },
+        '401': { $ref: '#/components/responses/Unauthorized' },
+        '400': { $ref: '#/components/responses/BadRequest' },
       },
     },
   },
 
   '/api/admin/programmes/{id}': {
     get: {
-      tags: ['Admin Programmes'],
-      summary: 'Get Programme by ID (Admin)',
+      tags: ['AdminProgrammes'],
+      summary: 'Get a programme by ID (admin)',
       security: [{ BearerAuth: [] }],
       parameters: [
         {
@@ -147,11 +82,10 @@ export const adminProgrammePaths: OpenAPIV3.PathsObject = {
           in: 'path',
           required: true,
           schema: { type: 'string' },
-          description: 'Programme ObjectId',
         },
       ],
       responses: {
-        200: {
+        '200': {
           description: 'Programme details',
           content: {
             'application/json': {
@@ -159,15 +93,13 @@ export const adminProgrammePaths: OpenAPIV3.PathsObject = {
             },
           },
         },
-        404: { description: 'Programme not found' },
-        401: { description: 'Unauthorized' },
+        '401': { $ref: '#/components/responses/Unauthorized' },
+        '404': { $ref: '#/components/responses/NotFound' },
       },
     },
     put: {
-      tags: ['Admin Programmes'],
-      summary: 'Update Programme (Admin)',
-      description:
-        'Update an existing programme and optionally upload new images.',
+      tags: ['AdminProgrammes'],
+      summary: 'Update a programme',
       security: [{ BearerAuth: [] }],
       parameters: [
         {
@@ -181,27 +113,26 @@ export const adminProgrammePaths: OpenAPIV3.PathsObject = {
         required: true,
         content: {
           'multipart/form-data': {
-            schema: { $ref: '#/components/schemas/UpdateProgrammeRequest' },
+            schema: { $ref: '#/components/schemas/UpdateProgrammePayload' },
           },
         },
       },
       responses: {
-        200: {
-          description: 'Programme updated successfully',
+        '200': {
+          description: 'Programme updated',
           content: {
             'application/json': {
               schema: { $ref: '#/components/schemas/Programme' },
             },
           },
         },
-        400: { description: 'Invalid request body' },
-        404: { description: 'Programme not found' },
-        401: { description: 'Unauthorized' },
+        '401': { $ref: '#/components/responses/Unauthorized' },
+        '404': { $ref: '#/components/responses/NotFound' },
       },
     },
     delete: {
-      tags: ['Admin Programmes'],
-      summary: 'Delete Programme (Admin)',
+      tags: ['AdminProgrammes'],
+      summary: 'Delete a programme',
       security: [{ BearerAuth: [] }],
       parameters: [
         {
@@ -212,9 +143,9 @@ export const adminProgrammePaths: OpenAPIV3.PathsObject = {
         },
       ],
       responses: {
-        204: { description: 'Programme deleted successfully' },
-        404: { description: 'Programme not found' },
-        401: { description: 'Unauthorized' },
+        '204': { description: 'Deleted successfully' },
+        '401': { $ref: '#/components/responses/Unauthorized' },
+        '404': { $ref: '#/components/responses/NotFound' },
       },
     },
   },

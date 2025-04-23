@@ -5,6 +5,7 @@ import { authPaths } from './paths/auth';
 import { agentPaths } from './paths/agent';
 import { healthPaths } from './paths/health';
 import { applicationPaths } from './paths/application';
+import { programmePaths } from './paths/programme';
 
 import { adminAdminPaths } from './paths/adminAdmin';
 import { adminAgentPaths } from './paths/adminAgent';
@@ -49,6 +50,7 @@ const swaggerDocument: OpenAPIV3.Document = {
     ...agentPaths,
     ...healthPaths,
     ...applicationPaths,
+    ...programmePaths,
 
     // admin endpoints
     ...adminAdminPaths,

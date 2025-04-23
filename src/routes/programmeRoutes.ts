@@ -1,25 +1,15 @@
-import express from 'express';
-import multer from 'multer';
+import { Router } from 'express';
+import { authenticate } from '../middlewares/authMiddleware';
 import {
-  createProgrammeController,
-  getProgrammeByIdController,
-  updateProgrammeController,
-  deleteProgrammeController,
-  getAllProgrammesController,
+  listProgrammesForAgentController,
+  getProgrammeByIdForAgentController,
 } from '../controllers/programmeController';
 
-const router = express.Router();
+const router = Router();
 
-const upload = multer();
+router.use(authenticate);
 
-router.post('/', upload.array('images'), createProgrammeController);
-
-router.get('/', getAllProgrammesController);
-
-router.get('/:id', getProgrammeByIdController);
-
-router.put('/:id', upload.array('images'), updateProgrammeController);
-
-router.delete('/:id', deleteProgrammeController);
+router.get('/', listProgrammesForAgentController);
+router.get('/:id', getProgrammeByIdForAgentController);
 
 export default router;

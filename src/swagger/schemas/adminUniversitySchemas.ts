@@ -116,6 +116,11 @@ export const adminUniversitySchemas: OpenAPIV3.ComponentsObject['schemas'] = {
           country: { type: 'string', example: 'United Kingdom' },
         },
       },
+      currency: {
+        type: 'string',
+        example: 'GBP',
+        description: 'Currency used by the university',
+      },
       createdAt: {
         type: 'string',
         format: 'date-time',
