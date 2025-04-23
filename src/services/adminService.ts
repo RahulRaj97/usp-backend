@@ -2,9 +2,18 @@
 // =====================================================================
 import mongoose from 'mongoose';
 import AdminModel, { IAdmin } from '../models/adminModel';
-import { IUser } from '../models/userModel';
+import userModel from '../models/userModel';
 import { NotFoundError, BadRequestError } from '../utils/appError';
-import { createUser, updateUser } from './userService';
+
+interface CreateAdminInput {
+  email: string;
+  password: string;
+  firstName: string;
+  lastName: string;
+  phone?: string;
+  profileImage?: string;
+  address?: object;
+}
 
 /**
  * Get an Admin record by its own ID
@@ -49,50 +58,62 @@ export const listAdmins = async (
   };
 };
 
-export const createAdmin = async (data: {
-  email: string;
-  password: string;
-  profileImage?: string;
-  address?: IUser['address'];
-}): Promise<IAdmin> => {
-  // 1) Create the User with role='admin'
-  const user = await createUser({ ...data, role: 'admin' });
-  // 2) Create the Admin document
-  const admin = await AdminModel.create({ user: user._id });
-  // 3) Return the fully populated Admin
-  return (await AdminModel.findById(admin._id).lean()) as IAdmin;
+export const createAdmin = async (data: CreateAdminInput): Promise<IAdmin> => {
+  const { email, password, firstName, lastName, phone, profileImage, address } =
+    data;
+  if (await userModel.findOne({ email }))
+    throw new BadRequestError('Email already in use');
+  const user = await userModel.create({
+    email,
+    password,
+    role: 'admin',
+    profileImage,
+    address,
+  });
+  await AdminModel.create({
+    user: user._id,
+    firstName,
+    lastName,
+    phone,
+  });
+  // now fetch & return with your automatic populate hook
+  const admin = await AdminModel.findOne({ user: user._id }).lean();
+  return admin as any; // or keep as IAdmin
 };
 
-/**
- * Update an existing Admin + underlying User
- */
+interface UpdateAdminInput {
+  firstName?: string;
+  lastName?: string;
+  phone?: string;
+  profileImage?: string;
+  address?: object;
+  password?: string;
+}
+
 export const updateAdmin = async (
   adminId: string,
-  data: {
-    password?: string;
-    profileImage?: string;
-    address?: IUser['address'];
-  },
+  data: UpdateAdminInput,
 ): Promise<IAdmin> => {
-  if (!mongoose.Types.ObjectId.isValid(adminId)) {
-    throw new BadRequestError('Invalid admin ID');
-  }
   const admin = await AdminModel.findById(adminId);
   if (!admin) throw new NotFoundError('Admin not found');
 
-  // Build partial user update payload
-  const userUpdates: Partial<IUser> = {};
-  if (data.password) userUpdates.password = data.password;
+  if (data.firstName !== undefined) admin.firstName = data.firstName;
+  if (data.lastName !== undefined) admin.lastName = data.lastName;
+  if (data.phone !== undefined) admin.phone = data.phone;
+  await admin.save();
+
+  const userUpdates: any = {};
   if (data.profileImage) userUpdates.profileImage = data.profileImage;
   if (data.address) userUpdates.address = data.address;
+  if (data.password) userUpdates.password = data.password;
 
-  // Apply to User
-  if (Object.keys(userUpdates).length > 0) {
-    await updateUser(admin.user.toString(), userUpdates);
+  if (Object.keys(userUpdates).length) {
+    await userModel.findByIdAndUpdate(admin.user, userUpdates);
   }
 
-  // No extra AdminModel fields to change currently
-  return (await AdminModel.findById(adminId).lean()) as IAdmin;
+  const updatedAdmin = await AdminModel.findById(adminId).lean();
+  if (!updatedAdmin) throw new NotFoundError('Admin not found');
+  return updatedAdmin;
 };
 /**
  * Delete an Admin record

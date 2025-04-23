@@ -16,7 +16,7 @@ export const adminAdminSchemas: OpenAPIV3.ComponentsObject['schemas'] = {
     properties: {
       message: { type: 'string', example: 'Login successful' },
       token: { type: 'string', example: 'eyJhbGci…' },
-      user: { $ref: '#/components/schemas/AdminProfile' },
+      user: { $ref: '#/components/schemas/Admin' },
     },
     required: ['message', 'token', 'user'],
   },
@@ -39,85 +39,44 @@ export const adminAdminSchemas: OpenAPIV3.ComponentsObject['schemas'] = {
 
   CreateAdminRequest: {
     type: 'object',
+    required: ['email', 'password', 'firstName', 'lastName'],
     properties: {
-      email: { type: 'string', format: 'email', example: 'alice@portal.com' },
-      password: {
-        type: 'string',
-        format: 'password',
-        example: 'SecurePass!23',
-      },
-      profileImage: {
-        type: 'string',
-        format: 'uri',
-        example: 'https://cdn.example.com/avatar.png',
-      },
-      address: {
-        type: 'object',
-        properties: {
-          street: { type: 'string', example: '123 Main St' },
-          city: { type: 'string', example: 'Berlin' },
-          state: { type: 'string', example: 'Berlin' },
-          postalCode: { type: 'string', example: '10115' },
-          country: { type: 'string', example: 'Germany' },
-        },
-      },
+      email: { type: 'string', format: 'email' },
+      password: { type: 'string', minLength: 8 },
+      firstName: { type: 'string' },
+      lastName: { type: 'string' },
+      phone: { type: 'string' },
+      profileImage: { type: 'string', format: 'binary' },
+      address: { $ref: '#/components/schemas/Address' },
     },
-    required: ['email', 'password'],
   },
 
   UpdateAdminRequest: {
     type: 'object',
     properties: {
-      password: { type: 'string', format: 'password', example: 'NewPass!456' },
-      profileImage: {
-        type: 'string',
-        format: 'uri',
-        example: 'https://cdn.example.com/new.png',
-      },
-      address: {
-        type: 'object',
-        properties: {
-          street: { type: 'string', example: '456 Elm St' },
-          city: { type: 'string', example: 'Munich' },
-          state: { type: 'string', example: 'Bavaria' },
-          postalCode: { type: 'string', example: '80331' },
-          country: { type: 'string', example: 'Germany' },
-        },
-      },
+      firstName: { type: 'string' },
+      lastName: { type: 'string' },
+      phone: { type: 'string' },
+      profileImage: { type: 'string', format: 'binary' },
+      address: { $ref: '#/components/schemas/Address' },
+      password: { type: 'string', minLength: 8 },
     },
   },
 
-  AdminProfile: {
+  Admin: {
     type: 'object',
     properties: {
-      _id: { type: 'string', example: '60d0fe4f5311236168a109ca' },
-      email: { type: 'string', format: 'email', example: 'alice@portal.com' },
-      profileImage: {
-        type: 'string',
-        format: 'uri',
-        example: 'https://cdn.example.com/avatar.png',
-      },
+      _id: { type: 'string' },
+      email: { type: 'string', format: 'email' },
+      firstName: { type: 'string' },
+      lastName: { type: 'string' },
+      phone: { type: 'string' },
+      profileImage: { type: 'string', format: 'uri' },
       address: { $ref: '#/components/schemas/Address' },
-      isActive: { type: 'boolean', example: true },
-      isEmailVerified: { type: 'boolean', example: false },
-      createdAt: {
-        type: 'string',
-        format: 'date-time',
-        example: '2025-04-18T12:00:00Z',
-      },
-      updatedAt: {
-        type: 'string',
-        format: 'date-time',
-        example: '2025-04-18T12:30:00Z',
-      },
+      isActive: { type: 'boolean' },
+      isEmailVerified: { type: 'boolean' },
+      createdAt: { type: 'string', format: 'date-time' },
+      updatedAt: { type: 'string', format: 'date-time' },
     },
-    required: [
-      '_id',
-      'email',
-      'isActive',
-      'isEmailVerified',
-      'createdAt',
-      'updatedAt',
-    ],
   },
 };

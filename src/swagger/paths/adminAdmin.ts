@@ -78,8 +78,20 @@ export const adminAdminPaths: OpenAPIV3.PathsObject = {
       requestBody: {
         required: true,
         content: {
-          'application/json': {
-            schema: { $ref: '#/components/schemas/CreateAdminRequest' },
+          'multipart/form-data': {
+            schema: {
+              type: 'object',
+              required: ['email', 'password', 'firstName', 'lastName'],
+              properties: {
+                email: { type: 'string', format: 'email' },
+                password: { type: 'string', format: 'password' },
+                firstName: { type: 'string' },
+                lastName: { type: 'string' },
+                phone: { type: 'string' },
+                profileImage: { type: 'string', format: 'binary' },
+                address: { $ref: '#/components/schemas/Address' },
+              },
+            },
           },
         },
       },
@@ -88,7 +100,7 @@ export const adminAdminPaths: OpenAPIV3.PathsObject = {
           description: 'Admin created',
           content: {
             'application/json': {
-              schema: { $ref: '#/components/schemas/AdminProfile' },
+              schema: { $ref: '#/components/schemas/Admin' },
             },
           },
         },
@@ -116,8 +128,18 @@ export const adminAdminPaths: OpenAPIV3.PathsObject = {
       requestBody: {
         required: true,
         content: {
-          'application/json': {
-            schema: { $ref: '#/components/schemas/UpdateAdminRequest' },
+          'multipart/form-data': {
+            schema: {
+              type: 'object',
+              properties: {
+                firstName: { type: 'string' },
+                lastName: { type: 'string' },
+                phone: { type: 'string' },
+                profileImage: { type: 'string', format: 'binary' },
+                address: { $ref: '#/components/schemas/Address' },
+                password: { type: 'string', minLength: 8 },
+              },
+            },
           },
         },
       },
@@ -126,7 +148,7 @@ export const adminAdminPaths: OpenAPIV3.PathsObject = {
           description: 'Admin updated',
           content: {
             'application/json': {
-              schema: { $ref: '#/components/schemas/AdminProfile' },
+              schema: { $ref: '#/components/schemas/Admin' },
             },
           },
         },
