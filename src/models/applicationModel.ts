@@ -3,24 +3,78 @@ import { customAlphabet } from 'nanoid';
 
 const nano = customAlphabet('ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789', 8);
 
-export type ApplicationStatus =
-  | 'submitted_to_usp'
-  | 'pending_documents'
-  | 'submitted_to_university'
-  | 'university_query'
-  | 'final_decision'
-  | 'respond_to_offer';
+export const STATUS_VALUES = [
+  'Submitted to USP',
+  'Pending Documents',
+  'Submitted to University',
+  'University Query',
+  'Final Decision',
+  'Respond to Offer',
+] as const;
+export type ApplicationStatus = (typeof STATUS_VALUES)[number];
 
-export type ApplicationStage =
-  | 'profile_complete'
-  | 'documents_uploaded'
-  | 'programme_selected'
-  | 'application_submitted'
-  | 'university_processing'
-  | 'offer_received'
-  | 'student_confirmed'
-  | 'visa_processing'
-  | 'finalized';
+export const STAGE_VALUES = [
+  'Collect Personal Information',
+  'Search Courses',
+  'Save Courses',
+  'Complete Study Preferences',
+  'Capture Any Additional Details',
+  'Shortlist Courses',
+  'Collect Documents',
+  'Review Application',
+  'Submit Application to Adventus',
+  'Complete Application Form',
+  'Review Visa Suitability',
+  'Review Documents',
+  'Approve and Proceed',
+  'Approve & Proceed',
+  'Message QCV about',
+  'Message QCV about Visa Docs',
+  'Upload Offers & Acceptance Docs',
+  'Receive offers & Acceptance Documents',
+  'Notify student of offers',
+  'Complete acceptance forms',
+  'Upload completed acceptance docs',
+  'Message admissions about payment',
+  'Upload proof of payment',
+  'Submit acceptance and payment proof',
+  'Receive Confirmation Enrolment (CoE, LOA, CAS,i20)',
+  'Upload Enrolment Confirmation',
+  'Message Counsellor about enrolment',
+  'Download Enrolment Confirmation (CoE, LOA, CAS,i20)',
+  'Notify Student of Enrolment Confirmation (CoE, LOA, CAS,i20)',
+  'Collect Remaining Visa Docs',
+  'Upload Remaining Visa Docs',
+  'Collect visa documents',
+  'Upload visa documents',
+  'Organise medical',
+  'Organise biometrics interview',
+  'Organise visa interview training',
+  'Lodge visa application',
+  'Upload visa result letter',
+  'Notify student',
+  'Initiate deferment process(if required)',
+  'Initiate refund process(if required)',
+  'Invoice University',
+  'University Payment Received',
+  'Pay Channel Partner',
+] as const;
+export type ApplicationStage = (typeof STAGE_VALUES)[number];
+
+export interface StageHistoryEntry {
+  stage: ApplicationStage;
+  notes?: string;
+  completedAt: Date;
+}
+
+const StageHistorySchema = new Schema<StageHistoryEntry>(
+  {
+    stage: { type: String, enum: STAGE_VALUES, required: true },
+    notes: String,
+    completedAt: { type: Date, default: Date.now },
+  },
+  { _id: false },
+);
 
 export interface IApplication extends Document {
   _id: mongoose.Types.ObjectId;
@@ -39,16 +93,31 @@ export interface IApplication extends Document {
   supportingDocuments?: string[];
   submittedAt?: Date;
   isWithdrawn: boolean;
+  stageHistory: StageHistoryEntry[];
   createdAt: Date;
   updatedAt: Date;
 }
 
-const ApplicationSchema: Schema = new Schema<IApplication>(
+const ApplicationSchema = new Schema<IApplication>(
   {
     applicationCode: { type: String, required: true, unique: true },
-    studentId: { type: Schema.Types.ObjectId, ref: 'Student', required: true },
-    agentId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
-    companyId: { type: Schema.Types.ObjectId, ref: 'Company', required: true },
+
+    studentId: {
+      type: Schema.Types.ObjectId,
+      ref: 'Student',
+      required: true,
+    },
+    agentId: {
+      type: Schema.Types.ObjectId,
+      ref: 'Agent',
+      required: true,
+    },
+    companyId: {
+      type: Schema.Types.ObjectId,
+      ref: 'Company',
+      required: true,
+    },
+
     programmeIds: [
       { type: Schema.Types.ObjectId, ref: 'Programme', required: true },
     ],
@@ -62,37 +131,30 @@ const ApplicationSchema: Schema = new Schema<IApplication>(
         priority: { type: Number, min: 1, max: 3, required: true },
       },
     ],
+
     status: {
       type: String,
-      enum: [
-        'submitted_to_usp',
-        'pending_documents',
-        'submitted_to_university',
-        'university_query',
-        'final_decision',
-        'respond_to_offer',
-      ],
-      default: 'submitted_to_usp',
+      enum: STATUS_VALUES,
+      default: 'Submitted to USP',
+      required: true,
     },
+
     currentStage: {
       type: String,
-      enum: [
-        'profile_complete',
-        'documents_uploaded',
-        'programme_selected',
-        'application_submitted',
-        'university_processing',
-        'offer_received',
-        'student_confirmed',
-        'visa_processing',
-        'finalized',
-      ],
-      default: 'profile_complete',
+      enum: STAGE_VALUES,
+      default: 'Collect Personal Information',
+      required: true,
     },
-    notes: { type: String },
-    supportingDocuments: [{ type: String }],
-    submittedAt: { type: Date },
+
+    notes: String,
+    supportingDocuments: [String],
+    submittedAt: Date,
     isWithdrawn: { type: Boolean, default: false },
+
+    stageHistory: {
+      type: [StageHistorySchema],
+      default: [],
+    },
   },
   { timestamps: true },
 );

@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import multer from 'multer';
 import { authenticate } from '../../middlewares/authMiddleware';
 import { requireAdmin } from '../../middlewares/requireAdmins';
 import {
@@ -8,19 +9,29 @@ import {
   deleteApplicationAdmin,
   withdrawApplicationAdmin,
   getApplicationByIdAdmin,
+  uploadSupportingDocsAdmin,
 } from '../../controllers/admin/applicationAdminController';
+
+export const upload = multer({ storage: multer.memoryStorage() });
 
 const router = Router();
 
-// All admin endpoints require a valid token + admin role
+// all admin routes require authentication + admin role
 router.use(authenticate, requireAdmin);
 
-// CRUD + withdraw under /api/admin/applications
-router.get('/:id', getApplicationByIdAdmin);
-router.post('/', createApplicationAdmin);
+// list before get-by-id
 router.get('/', listApplicationsAdminController);
+router.get('/:id', getApplicationByIdAdmin);
+
+router.post('/', createApplicationAdmin);
 router.put('/:id', updateApplicationAdmin);
-router.delete('/:id', deleteApplicationAdmin);
 router.patch('/:id/withdraw', withdrawApplicationAdmin);
+router.delete('/:id', deleteApplicationAdmin);
+
+router.post(
+  '/:id/supporting-documents',
+  upload.array('files', 10),
+  uploadSupportingDocsAdmin,
+);
 
 export default router;

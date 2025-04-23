@@ -1,15 +1,65 @@
 import { Request, Response, NextFunction } from 'express';
-import { StatusCodes } from '../../utils/httpStatuses';
 import {
   adminCreateApplication,
   listApplicationsAdmin,
   adminUpdateApplication,
   adminDeleteApplication,
   adminWithdrawApplication,
-  AdminApplicationDto,
-  AdminApplicationFilters,
   getApplicationById,
+  AdminApplicationDto,
+  ApplicationFilters as AdminApplicationFilters,
 } from '../../services/applicationService';
+import { StatusCodes } from '../../utils/httpStatuses';
+import { uploadFileBufferToS3 } from '../../services/s3UploadHelpter';
+
+/**
+ * Admin: create any application
+ */
+export const createApplicationAdmin = async (
+  req: Request<{}, {}, AdminApplicationDto>,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const app = await adminCreateApplication(req.body);
+    res.status(StatusCodes.CREATED).json(app);
+  } catch (err) {
+    next(err);
+  }
+};
+
+/**
+ * Admin: list all applications (unscoped)
+ */
+export const listApplicationsAdminController = async (
+  // leave req.query typed as AdminApplicationFilters
+  req: Request<{}, {}, {}, AdminApplicationFilters>,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const raw = req.query;
+
+    const filters: AdminApplicationFilters = {
+      page:
+        typeof raw.page === 'string' ? parseInt(raw.page, 10) : (raw.page ?? 1),
+      limit:
+        typeof raw.limit === 'string'
+          ? parseInt(raw.limit, 10)
+          : (raw.limit ?? 10),
+      studentId: raw.studentId,
+      agentId: raw.agentId,
+      companyId: raw.companyId,
+      status: raw.status as any,
+      stage: raw.stage as any,
+    };
+
+    const result = await listApplicationsAdmin(filters);
+    res.status(StatusCodes.OK).json(result);
+  } catch (err) {
+    next(err);
+  }
+};
 
 /**
  * Admin: get one application by ID
@@ -27,41 +77,9 @@ export const getApplicationByIdAdmin = async (
   }
 };
 
-export const createApplicationAdmin = async (
-  req: Request<{}, {}, AdminApplicationDto>,
-  res: Response,
-  next: NextFunction,
-) => {
-  try {
-    const app = await adminCreateApplication(req.body);
-    res.status(StatusCodes.CREATED).json(app);
-  } catch (err) {
-    next(err);
-  }
-};
-
-export const listApplicationsAdminController = async (
-  req: Request<{}, {}, {}, AdminApplicationFilters>,
-  res: Response,
-  next: NextFunction,
-) => {
-  try {
-    const filters: AdminApplicationFilters = {
-      page: parseInt(req.query.page as any) || 1,
-      limit: parseInt(req.query.limit as any) || 10,
-      status: req.query.status as any,
-      stage: req.query.stage as any,
-      studentId: req.query.studentId as string,
-      agentId: req.query.agentId as string,
-      companyId: req.query.companyId as string,
-    };
-    const result = await listApplicationsAdmin(filters);
-    res.status(StatusCodes.OK).json(result);
-  } catch (err) {
-    next(err);
-  }
-};
-
+/**
+ * Admin: update status, stage, notes, documents
+ */
 export const updateApplicationAdmin = async (
   req: Request<{ id: string }, {}, Partial<AdminApplicationDto>>,
   res: Response,
@@ -75,6 +93,25 @@ export const updateApplicationAdmin = async (
   }
 };
 
+/**
+ * Admin: withdraw (mark isWithdrawn=true)
+ */
+export const withdrawApplicationAdmin = async (
+  req: Request<{ id: string }>,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const withdrawn = await adminWithdrawApplication(req.params.id);
+    res.status(StatusCodes.OK).json(withdrawn);
+  } catch (err) {
+    next(err);
+  }
+};
+
+/**
+ * Admin: hard‐delete an application
+ */
 export const deleteApplicationAdmin = async (
   req: Request<{ id: string }>,
   res: Response,
@@ -88,14 +125,29 @@ export const deleteApplicationAdmin = async (
   }
 };
 
-export const withdrawApplicationAdmin = async (
+export const uploadSupportingDocsAdmin = async (
   req: Request<{ id: string }>,
   res: Response,
   next: NextFunction,
 ) => {
   try {
-    const app = await adminWithdrawApplication(req.params.id);
-    res.status(StatusCodes.OK).json(app);
+    const appId = req.params.id;
+    const files = req.files as Express.Multer.File[];
+    const urls = await Promise.all(
+      files.map((f) =>
+        uploadFileBufferToS3(
+          f.buffer,
+          f.originalname,
+          'applications',
+          appId,
+          f.mimetype,
+        ),
+      ),
+    );
+    const updated = await adminUpdateApplication(appId, {
+      supportingDocuments: urls,
+    });
+    res.status(StatusCodes.OK).json(updated);
   } catch (err) {
     next(err);
   }

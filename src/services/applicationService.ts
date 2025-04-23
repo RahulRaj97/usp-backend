@@ -1,88 +1,101 @@
-import studentModel from '../models/studentModel';
+// src/services/applicationService.ts
+
 import agentModel from '../models/agentModel';
 import applicationModel, {
+  IApplication,
   ApplicationStage,
   ApplicationStatus,
-  IApplication,
+  StageHistoryEntry,
 } from '../models/applicationModel';
 import { NotFoundError, UnauthorizedError } from '../utils/appError';
 import { getAgentById } from './agentService';
 import { getUserById } from './userService';
 
-interface ApplicationFilters {
+export interface ApplicationFilters {
   page?: number;
   limit?: number;
-  companyId?: string;
   studentId?: string;
+  companyId?: string;
+  agentId?: string;
+  status?: ApplicationStatus;
+  stage?: ApplicationStage;
 }
 
-// helper to fetch & transform one doc:
-async function enrichOneApplication(id: string) {
+type EnrichedApp = IApplication & { student: any };
+
+/**
+ * Internal helper: load one application, populate student, strip Mongoose metadata
+ */
+async function enrichOne(id: string): Promise<EnrichedApp> {
   const doc = await applicationModel.findById(id).populate('studentId').lean();
   if (!doc) throw new NotFoundError('Application not found');
-
   const { studentId, __v, ...rest } = doc as any;
-  return {
-    ...rest,
-    student: studentId,
-  } as IApplication & { student: any };
+  return { ...rest, student: studentId } as EnrichedApp;
 }
 
-export const createApplication = async (
-  agentId: string,
+/** Agent: create a new application */
+export async function createApplication(
+  agentUserId: string,
   studentId: string,
   programmeIds: string[],
   priorityMapping: Record<string, number>,
-): Promise<IApplication> => {
-  const agent = await getAgentById(agentId);
+): Promise<EnrichedApp> {
+  const agent = await getAgentById(agentUserId);
   if (!agent) throw new UnauthorizedError('Agent not found');
+  const mappingArray = Object.entries(priorityMapping).map(
+    ([programmeId, priority]) => ({ programmeId, priority }),
+  );
   const app = await applicationModel.create({
     studentId,
     agentId: agent._id,
     companyId: agent.companyId,
     programmeIds,
-    priorityMapping,
+    priorityMapping: mappingArray,
   });
-  return enrichOneApplication(app._id.toString());
-};
+  return enrichOne(app._id.toString());
+}
 
-export const listApplications = async (
-  agentId: string,
+/** Agent: list applications scoped to this agent (and their sub-agents or company) */
+export async function listApplications(
+  agentUserId: string,
   filters: ApplicationFilters = {},
-) => {
-  const page = filters.page || 1;
-  const limit = filters.limit || 10;
+) {
+  const page = filters.page ?? 1;
+  const limit = filters.limit ?? 10;
   const skip = (page - 1) * limit;
 
-  const agent = await getAgentById(agentId);
-  const user = await getUserById(`${agent.user._id}`);
+  const agent = await getAgentById(agentUserId);
   if (!agent) throw new UnauthorizedError('Agent not found');
+  const user = await getUserById(agent.user._id.toString());
 
   const query: any = {};
+  if (filters.studentId) query.studentId = filters.studentId;
+  if (filters.companyId) query.companyId = filters.companyId;
+  if (filters.status) query.status = filters.status;
+  if (filters.stage) query.currentStage = filters.stage;
 
-  if (filters.studentId) {
-    query.studentId = filters.studentId;
-  }
-
-  if (user.role === 'admin') {
-    // Admin: no scoping
-  } else if (user.role === 'agent') {
-    if (agent.level === 'admission' || agent.level === 'counsellor') {
-      query.agentId = agent._id;
-    } else if (agent.level === 'manager') {
-      const subAgents = await agentModel.find({ parentId: agent._id });
-      const agentIds = subAgents.map((a) => a._id).concat(agent._id);
-      query.agentId = { $in: agentIds };
-    } else if (agent.level === 'owner') {
-      query.companyId = agent.companyId;
-    } else {
-      throw new UnauthorizedError();
+  // Scope by agent.level
+  if (user.role === 'agent') {
+    switch (agent.level) {
+      case 'admission':
+      case 'counsellor':
+        query.agentId = agent._id;
+        break;
+      case 'manager': {
+        const subs = await agentModel.find({ parentId: agent._id });
+        query.agentId = { $in: subs.map((a) => a._id).concat(agent._id) };
+        break;
+      }
+      case 'owner':
+        query.companyId = agent.companyId;
+        if (filters.agentId) query.agentId = filters.agentId;
+        break;
+      default:
+        throw new UnauthorizedError();
     }
-  } else {
-    throw new UnauthorizedError();
   }
 
-  const [applications, total] = await Promise.all([
+  const [docs, total] = await Promise.all([
     applicationModel
       .find(query)
       .skip(skip)
@@ -91,35 +104,60 @@ export const listApplications = async (
     applicationModel.countDocuments(query),
   ]);
 
-  // ✅ Add studentId from student document (student.user === application.studentId)
-  const enrichedApplications = await Promise.all(
-    applications.map(async (application) => {
-      const student = await studentModel.findOne({
-        _id: application.studentId,
-      });
-      const studentId = student?.studentId || null;
-
-      return {
-        ...application.toObject(),
-        studentIdFriendly: studentId,
-      };
-    }),
-  );
+  const items = await Promise.all(docs.map((a) => enrichOne(a._id.toString())));
 
   return {
-    applications: enrichedApplications,
+    applications: items,
     totalPages: Math.ceil(total / limit),
     currentPage: page,
   };
-};
+}
 
-export const getApplicationById = async (id: string) => {
-  return await enrichOneApplication(id);
-};
+/** Anyone (agent or admin): get one application */
+export const getApplicationById = enrichOne;
 
-/**
- * Admin: create a new application
- */
+/** Agent: update notes or supportingDocuments (and record in stageHistory) */
+export async function updateApplication(
+  id: string,
+  data: { notes?: string; supportingDocuments?: string[] },
+): Promise<EnrichedApp> {
+  const app = await applicationModel.findById(id);
+  if (!app) throw new NotFoundError('Application not found');
+
+  if (data.notes != null) app.notes = data.notes;
+  if (data.supportingDocuments) {
+    app.supportingDocuments = data.supportingDocuments;
+    app.stageHistory.push({
+      stage: app.currentStage,
+      notes: data.notes,
+      completedAt: new Date(),
+    } as StageHistoryEntry);
+  }
+
+  await app.save();
+  return enrichOne(id);
+}
+
+/** Agent: withdraw their own application */
+export async function withdrawApplication(
+  agentUserId: string,
+  id: string,
+): Promise<EnrichedApp> {
+  const agent = await getAgentById(agentUserId);
+  if (!agent) throw new UnauthorizedError('Agent not found');
+
+  const app = await applicationModel.findById(id);
+  if (!app) throw new NotFoundError('Application not found');
+
+  if (!app.agentId.equals(agent._id)) {
+    throw new UnauthorizedError();
+  }
+  app.isWithdrawn = true;
+  await app.save();
+  return enrichOne(id);
+}
+
+/** Admin DTO for creation/update */
 export interface AdminApplicationDto {
   studentId: string;
   agentId: string;
@@ -132,65 +170,45 @@ export interface AdminApplicationDto {
   currentStage?: ApplicationStage;
 }
 
-export const adminCreateApplication = async (
-  data: AdminApplicationDto,
-): Promise<IApplication> => {
+/** Admin: create any application */
+export async function adminCreateApplication(
+  dto: AdminApplicationDto,
+): Promise<EnrichedApp> {
   const app = await applicationModel.create({
-    ...data,
-    status: data.status ?? 'submitted_to_usp',
-    currentStage: data.currentStage ?? 'profile_complete',
-    isWithdrawn: false,
+    ...dto,
     submittedAt: new Date(),
+    isWithdrawn: false,
   });
-  return enrichOneApplication(app._id.toString());
-};
-
-/**
- * Admin: list applications with filters
- */
-export interface AdminApplicationFilters {
-  page?: number;
-  limit?: number;
-  status?: ApplicationStatus;
-  stage?: ApplicationStage;
-  studentId?: string;
-  agentId?: string;
-  companyId?: string;
+  return enrichOne(app._id.toString());
 }
 
-export const listApplicationsAdmin = async (
-  filters: AdminApplicationFilters = {},
-) => {
-  const page = filters.page || 1;
-  const limit = filters.limit || 10;
+/** Admin: list all applications with arbitrary filters */
+export async function listApplicationsAdmin(filters: ApplicationFilters = {}) {
+  const page = filters.page ?? 1;
+  const limit = filters.limit ?? 10;
   const skip = (page - 1) * limit;
 
   const query: any = {};
+  if (filters.studentId) query.studentId = filters.studentId;
+  if (filters.companyId) query.companyId = filters.companyId;
+  if (filters.agentId) query.agentId = filters.agentId;
   if (filters.status) query.status = filters.status;
   if (filters.stage) query.currentStage = filters.stage;
-  if (filters.studentId) query.studentId = filters.studentId;
-  if (filters.agentId) query.agentId = filters.agentId;
-  if (filters.companyId) query.companyId = filters.companyId;
 
-  const [apps, total] = await Promise.all([
+  const [docs, total] = await Promise.all([
     applicationModel
       .find(query)
+      .populate('studentId')
       .skip(skip)
       .limit(limit)
-      .populate('studentId')
-      .lean()
-      .sort({ createdAt: -1 }),
+      .sort({ createdAt: -1 })
+      .lean(),
     applicationModel.countDocuments(query),
   ]);
 
-  // 2) strip out __v, and rename studentId → student
-  const applications = apps.map((app) => {
-    // pull off studentId and __v; everything else goes into `rest`
-    const { studentId, __v, ...rest } = app as any;
-    return {
-      ...rest,
-      student: studentId, // now your JSON has `student` not `studentId`
-    };
+  const applications = docs.map((doc: any) => {
+    const { studentId, __v, ...rest } = doc;
+    return { ...rest, student: studentId } as EnrichedApp;
   });
 
   return {
@@ -198,41 +216,57 @@ export const listApplicationsAdmin = async (
     totalPages: Math.ceil(total / limit),
     currentPage: page,
   };
-};
+}
 
-/**
- * Admin: update an application
- */
-export const adminUpdateApplication = async (
+/** Admin: update status, stage (pushing to history), notes, attachments */
+export async function adminUpdateApplication(
   id: string,
-  data: Partial<AdminApplicationDto>,
-): Promise<IApplication> => {
-  const updated = await applicationModel.findByIdAndUpdate(id, data, {
-    new: true,
-  });
-  if (!updated) throw new NotFoundError('Application not found');
-  return enrichOneApplication(id);
-};
+  data: Partial<{
+    notes: string;
+    supportingDocuments: string[];
+    status: ApplicationStatus;
+    currentStage: ApplicationStage;
+  }>,
+): Promise<EnrichedApp> {
+  const app = await applicationModel.findById(id);
+  if (!app) throw new NotFoundError('Application not found');
 
-/**
- * Admin: delete an application
- */
-export const adminDeleteApplication = async (id: string): Promise<void> => {
-  const result = await applicationModel.findByIdAndDelete(id);
-  if (!result) throw new NotFoundError('Application not found');
-};
+  if (data.status && data.status !== app.status) {
+    app.status = data.status;
+  }
 
-/**
- * Admin: withdraw (mark isWithdrawn)
- */
-export const adminWithdrawApplication = async (
+  if (data.currentStage && data.currentStage !== app.currentStage) {
+    app.stageHistory.push({
+      stage: app.currentStage,
+      notes: data.notes,
+      completedAt: new Date(),
+    } as StageHistoryEntry);
+    app.currentStage = data.currentStage;
+  }
+
+  if (data.notes) app.notes = data.notes;
+  if (data.supportingDocuments)
+    app.supportingDocuments = data.supportingDocuments;
+
+  await app.save();
+  return enrichOne(id);
+}
+
+/** Admin: mark withdrawn */
+export async function adminWithdrawApplication(
   id: string,
-): Promise<IApplication> => {
+): Promise<EnrichedApp> {
   const app = await applicationModel.findByIdAndUpdate(
     id,
     { isWithdrawn: true },
     { new: true },
   );
   if (!app) throw new NotFoundError('Application not found');
-  return app;
-};
+  return enrichOne(id);
+}
+
+/** Admin: hard delete */
+export async function adminDeleteApplication(id: string): Promise<void> {
+  const result = await applicationModel.findByIdAndDelete(id);
+  if (!result) throw new NotFoundError('Application not found');
+}

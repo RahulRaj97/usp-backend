@@ -1,4 +1,3 @@
-// File: src/swagger/paths/adminApplications.ts
 import { OpenAPIV3 } from 'openapi-types';
 
 export const adminApplicationPaths: OpenAPIV3.PathsObject = {
@@ -7,73 +6,39 @@ export const adminApplicationPaths: OpenAPIV3.PathsObject = {
       tags: ['Admin Applications'],
       summary: 'List Applications (Admin)',
       description:
-        'Retrieve a paginated list of applications. Supports filtering by status, stage, studentId, agentId, companyId.',
+        'List all applications, with full filtering (student, agent, company, status, stage).',
       security: [{ BearerAuth: [] }],
       parameters: [
+        { name: 'page', in: 'query', schema: { type: 'integer', default: 1 } },
         {
-          name: 'status',
+          name: 'limit',
           in: 'query',
-          schema: {
-            type: 'string',
-            enum: [
-              'submitted_to_usp',
-              'pending_documents',
-              'submitted_to_university',
-              'university_query',
-              'final_decision',
-              'respond_to_offer',
-            ],
-          },
-          description: 'Filter by application status',
-        },
-        {
-          name: 'stage',
-          in: 'query',
-          schema: {
-            type: 'string',
-            enum: [
-              'profile_complete',
-              'documents_uploaded',
-              'programme_selected',
-              'application_submitted',
-              'university_processing',
-              'offer_received',
-              'student_confirmed',
-              'visa_processing',
-              'finalized',
-            ],
-          },
-          description: 'Filter by current stage',
+          schema: { type: 'integer', default: 10 },
         },
         {
           name: 'studentId',
           in: 'query',
           schema: { type: 'string' },
-          description: 'Filter by Student ObjectId',
         },
         {
           name: 'agentId',
           in: 'query',
           schema: { type: 'string' },
-          description: 'Filter by Agent ObjectId',
         },
         {
           name: 'companyId',
           in: 'query',
           schema: { type: 'string' },
-          description: 'Filter by Company ObjectId',
         },
         {
-          name: 'page',
+          name: 'status',
           in: 'query',
-          schema: { type: 'integer', default: 1 },
-          description: 'Page number',
+          schema: { $ref: '#/components/schemas/ApplicationStatus' },
         },
         {
-          name: 'limit',
+          name: 'stage',
           in: 'query',
-          schema: { type: 'integer', default: 10 },
-          description: 'Items per page',
+          schema: { $ref: '#/components/schemas/ApplicationStage' },
         },
       ],
       responses: {
@@ -92,30 +57,33 @@ export const adminApplicationPaths: OpenAPIV3.PathsObject = {
       tags: ['Admin Applications'],
       summary: 'Create Application (Admin)',
       description:
-        'Create a new application with explicit agentId, studentId, companyId, programmes, and priorities.',
+        'Create a new application on behalf of any agent or student.',
       security: [{ BearerAuth: [] }],
       requestBody: {
         required: true,
         content: {
           'application/json': {
-            schema: { $ref: '#/components/schemas/CreateApplicationRequest' },
+            schema: {
+              $ref: '#/components/schemas/CreateAdminApplicationRequest',
+            },
           },
         },
       },
       responses: {
         201: {
-          description: 'Application created successfully',
+          description: 'Application created',
           content: {
             'application/json': {
               schema: { $ref: '#/components/schemas/Application' },
             },
           },
         },
-        400: { description: 'Invalid request body' },
+        400: { description: 'Validation error' },
         401: { description: 'Unauthorized' },
       },
     },
   },
+
   '/api/admin/applications/{id}': {
     get: {
       tags: ['Admin Applications'],
@@ -125,9 +93,8 @@ export const adminApplicationPaths: OpenAPIV3.PathsObject = {
         {
           name: 'id',
           in: 'path',
-          required: true,
           schema: { type: 'string' },
-          description: 'Application ObjectId',
+          required: true,
         },
       ],
       responses: {
@@ -139,7 +106,7 @@ export const adminApplicationPaths: OpenAPIV3.PathsObject = {
             },
           },
         },
-        404: { description: 'Application not found' },
+        404: { description: 'Not found' },
         401: { description: 'Unauthorized' },
       },
     },
@@ -147,14 +114,14 @@ export const adminApplicationPaths: OpenAPIV3.PathsObject = {
       tags: ['Admin Applications'],
       summary: 'Update Application (Admin)',
       description:
-        'Update an application’s status, stage, notes, or supportingDocuments.',
+        'Update status, stage and notes; automatically pushes history when stage change.',
       security: [{ BearerAuth: [] }],
       parameters: [
         {
           name: 'id',
           in: 'path',
-          required: true,
           schema: { type: 'string' },
+          required: true,
         },
       ],
       requestBody: {
@@ -167,62 +134,111 @@ export const adminApplicationPaths: OpenAPIV3.PathsObject = {
       },
       responses: {
         200: {
-          description: 'Application updated successfully',
+          description: 'Updated application',
           content: {
             'application/json': {
               schema: { $ref: '#/components/schemas/Application' },
             },
           },
         },
-        400: { description: 'Invalid request body' },
-        404: { description: 'Application not found' },
+        400: { description: 'Validation error' },
+        404: { description: 'Not found' },
         401: { description: 'Unauthorized' },
       },
     },
     delete: {
       tags: ['Admin Applications'],
       summary: 'Delete Application (Admin)',
+      description: 'Permanently delete an application.',
       security: [{ BearerAuth: [] }],
       parameters: [
         {
           name: 'id',
           in: 'path',
-          required: true,
           schema: { type: 'string' },
+          required: true,
         },
       ],
       responses: {
-        204: { description: 'Application deleted successfully' },
-        404: { description: 'Application not found' },
+        204: { description: 'No Content' },
+        404: { description: 'Not found' },
         401: { description: 'Unauthorized' },
       },
     },
   },
+
   '/api/admin/applications/{id}/withdraw': {
     patch: {
       tags: ['Admin Applications'],
-      summary: 'Withdraw Application (Admin)',
+      summary: 'Withdraw Application',
       description: 'Mark an application as withdrawn.',
       security: [{ BearerAuth: [] }],
       parameters: [
         {
           name: 'id',
           in: 'path',
-          required: true,
           schema: { type: 'string' },
-          description: 'Application ObjectId',
+          required: true,
         },
       ],
       responses: {
         200: {
-          description: 'Application withdrawn successfully',
+          description: 'Application marked withdrawn',
           content: {
             'application/json': {
               schema: { $ref: '#/components/schemas/Application' },
             },
           },
         },
-        404: { description: 'Application not found' },
+        404: { description: 'Not found' },
+        401: { description: 'Unauthorized' },
+      },
+    },
+  },
+
+  '/api/admin/applications/{id}/supporting-documents': {
+    post: {
+      tags: ['Admin Applications'],
+      summary: 'Upload Supporting Documents (Admin)',
+      description:
+        'Attach one or more files to an existing application as admin.',
+      security: [{ BearerAuth: [] }],
+      parameters: [
+        {
+          name: 'id',
+          in: 'path',
+          required: true,
+          schema: { type: 'string' },
+        },
+      ],
+      requestBody: {
+        required: true,
+        content: {
+          'multipart/form-data': {
+            schema: {
+              type: 'object',
+              properties: {
+                files: {
+                  type: 'array',
+                  items: { type: 'string', format: 'binary' },
+                  description: 'One or more files',
+                },
+              },
+            },
+          },
+        },
+      },
+      responses: {
+        200: {
+          description: 'Updated application with new document URLs',
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/Application' },
+            },
+          },
+        },
+        400: { description: 'Invalid upload' },
+        404: { description: 'Not found' },
         401: { description: 'Unauthorized' },
       },
     },
