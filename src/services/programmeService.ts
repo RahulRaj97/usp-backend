@@ -253,6 +253,14 @@ export async function getProgrammeByIdForAdmin(id: string) {
 export async function createProgrammeAdmin(
   dto: AdminCreateProgrammeDto,
 ): Promise<ProgrammeResponse> {
+  const existing = await programmeModel.findOne({
+    universityId: dto.universityId,
+    name: dto.name,
+  });
+  if (existing)
+    throw new NotFoundError(
+      'Programme with same name already exists for this university',
+    );
   // 1) create base doc (no images yet)
   const created = await programmeModel.create({
     universityId: dto.universityId,
