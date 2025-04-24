@@ -176,7 +176,7 @@ export const programmeSchemas: { [key: string]: OpenAPIV3.SchemaObject } = {
     type: 'object',
     required: [],
     properties: {
-      university: { $ref: '#/components/schemas/University' },
+      universityId: { type: 'string' },
       name: { type: 'string' },
       description: { type: 'string' },
       type: { $ref: '#/components/schemas/ProgrammeType' },
