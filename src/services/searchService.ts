@@ -24,12 +24,7 @@ export const searchAll = async (keyword: string, user: any) => {
   // Search in Programmes (no role restrictions)
   // -----------------------------------------------
   const programmes = await ProgrammeModel.find({
-    $or: [
-      { name: regex },
-      { description: regex },
-      { tuitionFee: regex },
-      { modules: regex },
-    ],
+    $or: [{ name: regex }, { description: regex }, { modules: regex }],
   })
     .limit(10)
     .lean();
