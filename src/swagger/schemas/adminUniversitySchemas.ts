@@ -11,9 +11,8 @@ export const adminUniversitySchemas: OpenAPIV3.ComponentsObject['schemas'] = {
       },
       logo: {
         type: 'string',
-        format: 'uri',
-        example: 'https://s3.aws/.../oxford.png',
-        description: 'URL to the university logo',
+        format: 'binary',
+        description: 'Logo image file to upload',
       },
       website: {
         type: 'string',
@@ -44,7 +43,7 @@ export const adminUniversitySchemas: OpenAPIV3.ComponentsObject['schemas'] = {
         },
       },
     },
-    required: ['name', 'website', 'contactEmail', 'address'],
+    required: ['name'],
   },
 
   UpdateUniversityRequest: {
@@ -53,8 +52,8 @@ export const adminUniversitySchemas: OpenAPIV3.ComponentsObject['schemas'] = {
       name: { type: 'string', example: 'Oxford University Updated' },
       logo: {
         type: 'string',
-        format: 'uri',
-        example: 'https://s3.aws/.../oxford-new.png',
+        format: 'binary',
+        description: 'New logo image file to upload',
       },
       website: {
         type: 'string',

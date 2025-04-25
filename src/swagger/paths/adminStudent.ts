@@ -1,4 +1,3 @@
-// File: src/swagger/paths/adminStudent.ts
 import { OpenAPIV3 } from 'openapi-types';
 
 export const adminStudentPaths: OpenAPIV3.PathsObject = {
@@ -63,6 +62,10 @@ export const adminStudentPaths: OpenAPIV3.PathsObject = {
         content: {
           'multipart/form-data': {
             schema: { $ref: '#/components/schemas/CreateStudentRequest' },
+            encoding: {
+              documentTypes: { style: 'form', explode: true },
+              documents: { style: 'form', explode: false },
+            },
           },
         },
       },
@@ -80,6 +83,7 @@ export const adminStudentPaths: OpenAPIV3.PathsObject = {
       },
     },
   },
+
   '/api/admin/students/{id}': {
     get: {
       tags: ['Admin Students'],
@@ -125,6 +129,9 @@ export const adminStudentPaths: OpenAPIV3.PathsObject = {
         content: {
           'multipart/form-data': {
             schema: { $ref: '#/components/schemas/UpdateStudentRequest' },
+            encoding: {
+              documents: { style: 'form', explode: false },
+            },
           },
         },
       },

@@ -57,7 +57,7 @@ export const adminStudentSchemas: OpenAPIV3.ComponentsObject['schemas'] = {
         items: { type: 'string', format: 'binary' },
         description: 'One or more document files',
       },
-      documentsTypes: {
+      documentTypes: {
         type: 'array',
         items: {
           type: 'string',
