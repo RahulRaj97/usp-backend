@@ -57,6 +57,20 @@ export const adminStudentSchemas: OpenAPIV3.ComponentsObject['schemas'] = {
         items: { type: 'string', format: 'binary' },
         description: 'One or more document files',
       },
+      documentsTypes: {
+        type: 'array',
+        items: {
+          type: 'string',
+          enum: [
+            'passport',
+            'academic_result',
+            'certificate',
+            'resume',
+            'other',
+          ],
+        },
+        description: 'Types of documents being uploaded',
+      },
       agentId: { type: 'string', example: '60d0fe4f5311236168a109cb' },
       companyId: { type: 'string', example: '60d0fe4f5311236168a109cc' },
     },

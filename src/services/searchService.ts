@@ -111,14 +111,8 @@ export const searchAllAdmin = async (keyword: string) => {
     await Promise.all([
       // Programmes
       ProgrammeModel.find({
-        $or: [
-          { name: regex },
-          { description: regex },
-          { tuitionFee: regex },
-          { modules: regex },
-        ],
+        $or: [{ name: regex }, { description: regex }, { modules: regex }],
       }).lean(),
-
       // Universities
       universityModel
         .find({
@@ -131,7 +125,6 @@ export const searchAllAdmin = async (keyword: string) => {
           ],
         })
         .lean(),
-
       // Companies
       companyModel
         .find({
@@ -144,7 +137,6 @@ export const searchAllAdmin = async (keyword: string) => {
           ],
         })
         .lean(),
-
       // Students (unrestricted)
       StudentModel.find({
         $or: [
@@ -156,7 +148,6 @@ export const searchAllAdmin = async (keyword: string) => {
             : []),
         ],
       }).lean(),
-
       // Agents (unrestricted)
       AgentModel.find({
         $or: [{ firstName: regex }, { lastName: regex }, { email: regex }],
