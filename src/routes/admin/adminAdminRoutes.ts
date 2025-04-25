@@ -7,6 +7,7 @@ import {
 import { authenticate } from '../../middlewares/authMiddleware';
 import {
   createAdminController,
+  getAdminByIdController,
   updateAdminController,
 } from '../../controllers/admin/adminController';
 import { uploadToS3 } from '../../services/s3Uploader';
@@ -17,6 +18,8 @@ const router = Router();
 router.post('/login', loginUser);
 router.post('/refresh', refreshToken);
 router.post('/logout', authenticate, logoutUser);
+
+router.get('/:id', authenticate, getAdminByIdController);
 
 const memoryUpload = multer();
 

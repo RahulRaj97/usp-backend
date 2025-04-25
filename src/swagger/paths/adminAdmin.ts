@@ -111,6 +111,32 @@ export const adminAdminPaths: OpenAPIV3.PathsObject = {
   },
 
   '/api/admin/{id}': {
+    get: {
+      tags: ['Admin Management'],
+      summary: 'Get Admin Details',
+      description: 'Retrieve the details of an admin by ID',
+      security: [{ BearerAuth: [] }],
+      parameters: [
+        {
+          name: 'id',
+          in: 'path',
+          required: true,
+          schema: { type: 'string' },
+          description: 'Admin ObjectId',
+        },
+      ],
+      responses: {
+        200: {
+          description: 'Admin details retrieved',
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/Admin' },
+            },
+          },
+        },
+        401: { description: 'Unauthorized' },
+      },
+    },
     put: {
       tags: ['Admin Management'],
       summary: 'Update Admin',

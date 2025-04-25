@@ -2,9 +2,26 @@
 import { Request, Response, NextFunction } from 'express';
 import AdminModel from '../../models/adminModel';
 import userModel from '../../models/userModel';
-import { createAdmin, updateAdmin } from '../../services/adminService';
+import {
+  createAdmin,
+  getAdminById,
+  updateAdmin,
+} from '../../services/adminService';
 import { uploadFileBufferToS3 } from '../../services/s3UploadHelpter';
 import { StatusCodes } from '../../utils/httpStatuses';
+
+export const getAdminByIdController = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const admin = await getAdminById(req.params.id);
+    res.status(StatusCodes.OK).json(admin);
+  } catch (err) {
+    next(err);
+  }
+};
 
 export const createAdminController = async (
   req: Request,
