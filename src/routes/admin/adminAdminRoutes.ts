@@ -19,7 +19,7 @@ router.post('/login', loginUser);
 router.post('/refresh', refreshToken);
 router.post('/logout', authenticate, logoutUser);
 
-router.get('/:id', authenticate, getAdminByIdController);
+router.get('/profile/:id', authenticate, getAdminByIdController);
 
 const memoryUpload = multer();
 

@@ -110,7 +110,7 @@ export const adminAdminPaths: OpenAPIV3.PathsObject = {
     },
   },
 
-  '/api/admin/{id}': {
+  '/api/admin/profile/{id}': {
     get: {
       tags: ['Admin Management'],
       summary: 'Get Admin Details',
@@ -137,6 +137,9 @@ export const adminAdminPaths: OpenAPIV3.PathsObject = {
         401: { description: 'Unauthorized' },
       },
     },
+  },
+
+  '/api/admin/{id}': {
     put: {
       tags: ['Admin Management'],
       summary: 'Update Admin',
