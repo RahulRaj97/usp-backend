@@ -42,15 +42,12 @@ export async function createApplication(
 ): Promise<EnrichedApp> {
   const agent = await getAgentById(agentUserId);
   if (!agent) throw new UnauthorizedError('Agent not found');
-  const mappingArray = Object.entries(priorityMapping).map(
-    ([programmeId, priority]) => ({ programmeId, priority }),
-  );
   const app = await applicationModel.create({
     studentId,
     agentId: agent._id,
     companyId: agent.companyId,
     programmeIds,
-    priorityMapping: mappingArray,
+    priorityMapping,
   });
   return enrichOne(app._id.toString());
 }
