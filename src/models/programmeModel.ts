@@ -212,4 +212,12 @@ ProgrammeSchema.pre(/^find/, function (this: mongoose.Query<any, any>, next) {
   next();
 });
 
+ProgrammeSchema.index({ name: 'text', description: 'text', lengthBreakdown: 'text' });
+ProgrammeSchema.index({ type: 1 });
+ProgrammeSchema.index({ deliveryMethod: 1 });
+ProgrammeSchema.index({ tuitionFee: 1 });
+ProgrammeSchema.index({ applicationFee: 1 });
+ProgrammeSchema.index({ 'intakes.status': 1 });
+ProgrammeSchema.index({ 'intakes.openDate': 1 });
+
 export default mongoose.model<IProgramme>('Programme', ProgrammeSchema);

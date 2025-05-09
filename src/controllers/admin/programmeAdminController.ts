@@ -33,7 +33,7 @@ export const listProgrammesAdminController = async (
       page: parseInt(req.query.page as any) || 1,
       limit: parseInt(req.query.limit as any) || 20,
       search: req.query.search as string | undefined,
-      universityId: req.query.universityId as string | undefined,
+      // universityId: req.query.universityId as string | undefined,
       type: req.query.type as any,
       deliveryMethod: req.query.deliveryMethod as any,
       openIntakeOnly: req.query.openIntakeOnly === true,

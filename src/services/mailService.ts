@@ -6,8 +6,10 @@ import nodemailer from 'nodemailer';
 dotenv.config();
 
 const otpTemplatePath = path.join(__dirname, '../templates/otp-template.html');
+const subagentTemplatePath = path.join(__dirname, '../templates/subagent-verification-template.html');
 
 let otpTemplate = fs.readFileSync(otpTemplatePath, 'utf-8');
+let subagentTemplate = fs.readFileSync(subagentTemplatePath, 'utf-8');
 
 const transporter = nodemailer.createTransport({
   host: process.env.SMTP_HOST,
@@ -40,6 +42,28 @@ export const sendOTPEmail = async (
     from: `"USP Admissions" <${process.env.SMTP_USER}>`,
     to: email,
     subject: 'Verify Your Email - OTP Code',
+    html,
+  };
+  await transporter.sendMail(mailOptions);
+};
+
+export const sendSubagentVerificationEmail = async (
+  name: string,
+  email: string,
+  level: string,
+  verificationLink: string,
+) => {
+  const expiryHours = process.env.VERIFICATION_EXPIRY_HOURS || 24;
+  const html = subagentTemplate
+    .replace(/{{NAME}}/g, name)
+    .replace(/{{LEVEL}}/g, level)
+    .replace(/{{VERIFICATION_LINK}}/g, verificationLink)
+    .replace(/{{EXPIRY_HOURS}}/g, expiryHours.toString());
+
+  const mailOptions = {
+    from: `"USP Admissions" <${process.env.SMTP_USER}>`,
+    to: email,
+    subject: 'Complete Your USP Admissions Registration',
     html,
   };
   await transporter.sendMail(mailOptions);

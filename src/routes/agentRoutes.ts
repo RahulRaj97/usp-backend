@@ -8,6 +8,8 @@ import {
   createAgentController,
   registerAgentController,
   toggleAgentStatusController,
+  verifySubagentController,
+  validateSubagentController,
 } from '../controllers/agentController';
 import { uploadToS3 } from '../services/s3Uploader';
 import { authenticate } from '../middlewares/authMiddleware';
@@ -21,6 +23,12 @@ router.post('/register', registerAgentController);
 
 // Public route - Verify OTP
 router.post('/verify-otp', verifyOTPController);
+
+// Public route - Validate subagent token
+router.get('/validate-subagent/:token', validateSubagentController);
+
+// Public route - Verify subagent
+router.post('/verify-subagent', verifySubagentController);
 
 // Protected route - Only parent agents can create sub-agents/agents
 router.post('/', authenticate, createAgentController);

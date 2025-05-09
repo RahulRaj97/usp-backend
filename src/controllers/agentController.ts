@@ -9,9 +9,11 @@ import {
   getAgentByUserId,
   toggleAgentStatus,
   sendOTPAndRegisterAgent,
+  verifySubagentToken,
+  validateSubagentToken,
 } from '../services/agentService';
 import { StatusCodes } from '../utils/httpStatuses';
-import { UnauthorizedError } from '../utils/appError';
+import { UnauthorizedError, BadRequestError } from '../utils/appError';
 
 export const registerAgentController = async (
   req: Request,
@@ -142,5 +144,48 @@ export const deleteAgentController = async (
     res.status(StatusCodes.NO_CONTENT).send();
   } catch (error) {
     next(error);
+  }
+};
+
+/**
+ * POST /agents/verify-subagent
+ * Verify subagent token and set password
+ */
+export const verifySubagentController = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const { token, password } = req.body;
+    if (!token || !password) {
+      throw new BadRequestError('Token and password are required');
+    }
+    await verifySubagentToken(token, password);
+    res.status(StatusCodes.OK).json({ message: 'Verification successful' });
+  } catch (err) {
+    next(err);
+  }
+};
+
+/**
+ * GET /agents/validate-subagent/:token
+ * Validate subagent token and get user details
+ */
+export const validateSubagentController = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const { token } = req.params;
+    if (!token) {
+      throw new BadRequestError('Token is required');
+    }
+
+    const userDetails = await validateSubagentToken(token);
+    res.status(StatusCodes.OK).json(userDetails);
+  } catch (err) {
+    next(err);
   }
 };

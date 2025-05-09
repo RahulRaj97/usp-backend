@@ -1,6 +1,7 @@
 // src/utils/s3UploadHelper.ts
 import { PutObjectCommand } from '@aws-sdk/client-s3';
 import { s3 } from './s3Uploader';
+import crypto from 'crypto';
 
 export const uploadFileBufferToS3 = async (
   buffer: Buffer,
@@ -10,7 +11,9 @@ export const uploadFileBufferToS3 = async (
   mimetype: string,
 ) => {
   const ext = originalName.split('.').pop();
-  const filename = `${Date.now()}.${ext}`;
+  // Add a random string to ensure uniqueness even with parallel uploads
+  const randomString = crypto.randomBytes(8).toString('hex');
+  const filename = `${Date.now()}_${randomString}.${ext}`;
   const key = `${folder}/${subPath}/${filename}`;
 
   await s3.send(

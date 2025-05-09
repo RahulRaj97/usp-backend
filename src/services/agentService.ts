@@ -6,6 +6,8 @@ import { NotFoundError, BadRequestError } from '../utils/appError';
 import { generateOTP } from '../utils/otpHelper';
 import { sendOTPEmail } from './mailService';
 import companyModel from '../models/companyModel';
+import { VerificationTokenModel, generateVerificationToken } from '../models/verificationTokenModel';
+import { sendSubagentVerificationEmail } from './mailService';
 
 /**
  * Register a Owner Agent & Send OTP
@@ -125,14 +127,14 @@ export const createSubAgent = async (parentAgentId: string, data: any) => {
     if (existingUser)
       throw new BadRequestError('User with this email already exists');
 
-    const defaultPassword = 'TempPassword@123'; // ⚠️ Must be changed later!
-
+    // Create user with temporary password
     const user = await UserModel.create(
       [
         {
           email,
-          password: defaultPassword,
+          password: 'TempPassword@123',
           role: 'agent',
+          isEmailVerified: false,
         },
       ],
       {
@@ -154,7 +156,33 @@ export const createSubAgent = async (parentAgentId: string, data: any) => {
       { session },
     );
 
-    // Todo: Send email to the new agent with the default password
+    // Generate verification token
+    const token = generateVerificationToken();
+    const expiresAt = new Date();
+    expiresAt.setHours(expiresAt.getHours() + 24); // 24 hours expiry
+
+    await VerificationTokenModel.create(
+      [
+        {
+          token,
+          email,
+          type: 'subagent',
+          expiresAt,
+        },
+      ],
+      { session },
+    );
+
+    // Generate verification link
+    const verificationLink = `${process.env.FRONTEND_URL}/sign-up-team/${token}`;
+
+    // Send verification email
+    await sendSubagentVerificationEmail(
+      `${firstName} ${lastName}`,
+      email,
+      level,
+      verificationLink,
+    );
 
     await session.commitTransaction();
     session.endSession();
@@ -165,6 +193,68 @@ export const createSubAgent = async (parentAgentId: string, data: any) => {
     session.endSession();
     throw error;
   }
+};
+
+/**
+ * Verify Subagent Token and Set Password
+ */
+export const verifySubagentToken = async (token: string, password: string) => {
+  const verificationToken = await VerificationTokenModel.findOne({
+    token,
+    type: 'subagent',
+    expiresAt: { $gt: new Date() },
+  });
+
+  if (!verificationToken) {
+    throw new BadRequestError('Invalid or expired verification token');
+  }
+
+  const user = await UserModel.findOne({ email: verificationToken.email });
+  if (!user) {
+    throw new NotFoundError('User not found');
+  }
+
+  // Update user with new password and mark as verified
+  user.password = password;
+  user.isEmailVerified = true;
+  await user.save();
+
+  // Delete the used token
+  await VerificationTokenModel.deleteOne({ token });
+
+  return true;
+};
+
+/**
+ * Validate Subagent Token and Get User Details
+ */
+export const validateSubagentToken = async (token: string) => {
+  const verificationToken = await VerificationTokenModel.findOne({
+    token,
+    type: 'subagent',
+    expiresAt: { $gt: new Date() },
+  });
+
+  if (!verificationToken) {
+    throw new BadRequestError('Invalid or expired verification token');
+  }
+
+  const user = await UserModel.findOne({ email: verificationToken.email });
+  if (!user) {
+    throw new NotFoundError('User not found');
+  }
+
+  const agent = await AgentModel.findOne({ user: user._id });
+  if (!agent) {
+    throw new NotFoundError('Agent not found');
+  }
+
+  return {
+    email: user.email,
+    firstName: agent.firstName,
+    lastName: agent.lastName,
+    level: agent.level,
+  };
 };
 
 /**

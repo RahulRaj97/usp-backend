@@ -11,14 +11,17 @@ import { uploadFileBufferToS3 } from './s3UploadHelpter';
 
 export interface AgentProgrammeFilters {
   search?: string;
-  universityId?: string;
-  type?: ProgrammeType;
-  deliveryMethod?: DeliveryMethod;
-  openIntakeOnly?: boolean;
+  type?: ProgrammeType[];                // multi-select programme types
+  deliveryMethod?: DeliveryMethod[];      // multi-select delivery methods
+  location?: string[];                    // city or country codes from university.address
+  intakeStatus?: IProgramIntake['status'][]; // e.g. ['open','likely_open']
+  intakeDateFrom?: Date;                  // lower bound on intake.openDate
+  intakeDateTo?: Date;                    // upper bound on intake.openDate
   minTuition?: number;
   maxTuition?: number;
   minApplicationFee?: number;
   maxApplicationFee?: number;
+  openIntakeOnly?: boolean;               // shorthand for status=open
   page?: number;
   limit?: number;
 }
@@ -97,11 +100,11 @@ interface ProgrammeResponse {
 
 async function projectProgramme(doc: IProgramme & { universityId: any }) {
   // ensure we have the full university object
-  const uni = doc.universityId.toObject() as any;
+  const uni = doc.universityId?.toObject ? doc.universityId.toObject() : doc.universityId;
   uni.id = uni._id.toString();
   delete uni._id;
   delete uni.__v;
-  const o = doc.toObject();
+  const o = doc.toObject ? doc.toObject() : doc;
   return {
     id: o._id.toString(),
     university: uni,
@@ -129,50 +132,148 @@ async function projectProgramme(doc: IProgramme & { universityId: any }) {
 
 /** AGENT: list only published programmes with filters */
 export async function listProgrammesForAgent(filters: AgentProgrammeFilters) {
-  const page = filters.page ?? 1;
+  const page  = filters.page  ?? 1;
   const limit = filters.limit ?? 20;
-  const skip = (page - 1) * limit;
+  const skip  = (page - 1) * limit;
 
-  const query: FilterQuery<IProgramme> = {};
+  // 1) Build the "match" object for Programme fields:
+  const match: FilterQuery<IProgramme> = {};
 
   if (filters.search) {
     const re = new RegExp(filters.search, 'i');
-    query.$or = [{ name: re }, { lengthBreakdown: re }];
+    match.$or = [
+      { name: re },
+      { description: re },
+      { lengthBreakdown: re }
+    ];
   }
-  if (filters.universityId) query.universityId = filters.universityId;
-  if (filters.type) query.type = filters.type;
-  if (filters.deliveryMethod) query.deliveryMethod = filters.deliveryMethod;
-  if (filters.minTuition != null || filters.maxTuition != null) {
-    query.tuitionFee = {
+
+  if (filters.type)           match.type           = { $in: filters.type };
+  if (filters.deliveryMethod) match.deliveryMethod = { $in: filters.deliveryMethod };
+
+  if (filters.minTuition || filters.maxTuition) {
+    match.tuitionFee = {
       ...(filters.minTuition != null ? { $gte: filters.minTuition } : {}),
       ...(filters.maxTuition != null ? { $lte: filters.maxTuition } : {}),
     };
   }
-  if (filters.minApplicationFee != null) {
-    query.applicationFee = { $gte: filters.minApplicationFee };
-  }
-  if (filters.maxApplicationFee != null) {
-    query.applicationFee = {
-      ...(query.applicationFee || {}),
-      $lte: filters.maxApplicationFee,
+
+  if (filters.minApplicationFee || filters.maxApplicationFee) {
+    match.applicationFee = {
+      ...(filters.minApplicationFee != null ? { $gte: filters.minApplicationFee } : {}),
+      ...(filters.maxApplicationFee != null ? { $lte: filters.maxApplicationFee } : {}),
     };
   }
+
   if (filters.openIntakeOnly) {
-    query.intakes = { $elemMatch: { status: 'open' } };
+    // shorthand for "only open intakes"
+    match.intakes = { $elemMatch: { status: 'open' } };
   }
 
-  const [docs, total] = await Promise.all([
-    programmeModel
-      .find(query)
-      .skip(skip)
-      .limit(limit)
-      .sort({ name: 1 })
-      .populate('universityId', 'name logo website'),
-    programmeModel.countDocuments(query),
+  if (filters.intakeStatus) {
+    match.intakes = {
+      ...(match.intakes || {}),
+      $elemMatch: { status: { $in: filters.intakeStatus } }
+    };
+  }
+
+  if (filters.intakeDateFrom || filters.intakeDateTo) {
+    const dateQuery: any = {};
+    if (filters.intakeDateFrom) dateQuery.$gte = filters.intakeDateFrom;
+    if (filters.intakeDateTo)   dateQuery.$lte = filters.intakeDateTo;
+    match.intakes = {
+      ...(match.intakes || {}),
+      $elemMatch: { openDate: dateQuery }
+    };
+  }
+
+  // 2) If no "location" filter, we can just `.find(match)`
+  if (!filters.location) {
+    const [docs, total] = await Promise.all([
+      programmeModel
+        .find({ ...match, published: true })
+        .skip(skip)
+        .limit(limit)
+        .sort({ name: 1 }),
+      programmeModel.countDocuments({ ...match, published: true }),
+    ]);
+    return {
+      programmes: await Promise.all(docs.map(projectProgramme)),
+      totalPages: Math.ceil(total / limit),
+      currentPage: page,
+    };
+  }
+
+  // 3) If you *do* need to filter by university address, use an aggregation:
+  const pipeline: any[] = [
+    { $match: { ...match, published: true } },
+
+    // join in the university doc
+    {
+      $lookup: {
+        from: 'universities',
+        localField: 'universityId',
+        foreignField: '_id',
+        as: 'university'
+      }
+    },
+    { $unwind: '$university' },
+
+    // apply the location filter against the populated address
+    {
+      $match: {
+        'university.address.country': { $in: filters.location },
+      }
+    },
+
+    // now paginate & sort
+    { $sort: { name: 1 } },
+    { $skip: skip },
+    { $limit: limit },
+
+    // finally reshape like projectProgramme (or do a second lookup/populate if needed)
+    {
+      $project: {
+        _id: 1,
+        universityId: '$university',
+        name: 1,
+        type: 1,
+        description: 1,
+        lengthBreakdown: 1,
+        deliveryMethod: 1,
+        tuitionFee: 1,
+        applicationFee: 1,
+        otherFees: 1,
+        published: 1,
+        metaTitle: 1,
+        metaDescription: 1,
+        metaKeywords: 1,
+        intakes: 1,
+        programRequirement: 1,
+        modules: 1,
+        services: 1,
+        images: 1,
+        createdAt: 1,
+        updatedAt: 1
+      }
+    }
+  ];
+
+  const [docs, countResult] = await Promise.all([
+    programmeModel.aggregate(pipeline),
+    // for total count, run the same match+lookup+location match but end in {$count:"count"}
+    programmeModel.aggregate([
+      { $match: { ...match, published: true } },
+      { $lookup: { from:'universities', localField:'universityId', foreignField:'_id', as:'university' } },
+      { $unwind:'$university' },
+      { $match:{ 'university.address.country':{ $in: filters.location } } },
+      { $count: "count" }
+    ])
   ]);
 
+  const total = countResult[0]?.count ?? 0;
   return {
-    programmes: await Promise.all(docs.map((d) => projectProgramme(d))),
+    programmes: await Promise.all(docs.map(projectProgramme)),
     totalPages: Math.ceil(total / limit),
     currentPage: page,
   };
@@ -199,7 +300,7 @@ export async function listProgrammesAdmin(filters: AdminProgrammeFilters) {
     const re = new RegExp(filters.search, 'i');
     query.$or = [{ name: re }, { lengthBreakdown: re }];
   }
-  if (filters.universityId) query.universityId = filters.universityId;
+  // if (filters.universityId) query.universityId = filters.universityId;
   if (filters.type) query.type = filters.type;
   if (filters.deliveryMethod) query.deliveryMethod = filters.deliveryMethod;
   if (filters.minTuition != null || filters.maxTuition != null) {
