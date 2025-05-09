@@ -140,7 +140,9 @@ export async function listProgrammesForAgent(filters: AgentProgrammeFilters) {
   const match: FilterQuery<IProgramme> = {};
 
   if (filters.search) {
-    const re = new RegExp(filters.search, 'i');
+    // Escape special characters in the search string
+    const escapedSearch = filters.search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const re = new RegExp(escapedSearch, 'i');
     match.$or = [
       { name: re },
       { description: re },
