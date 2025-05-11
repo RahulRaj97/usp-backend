@@ -16,6 +16,7 @@ export const createUniversity = async (
     phone: data.phone,
     address: data.address,
     description: data.description,
+    currency: data.currency,
   });
 
   if (logoFile) {
