@@ -24,12 +24,15 @@ export const createUniversityController = async (
 };
 
 export const getAllUniversitiesController = async (
-  _req: Request,
+  req: Request,
   res: Response,
   next: NextFunction,
 ) => {
   try {
-    const universities = await getAllUniversities();
+    const filters = {
+      search: req.query.search as string | undefined,
+    };
+    const universities = await getAllUniversities(filters);
     res.status(StatusCodes.OK).json(universities);
   } catch (error) {
     next(error);

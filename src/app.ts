@@ -39,7 +39,10 @@ app.use((req, res, next) => {
     'Access-Control-Allow-Headers',
     'Content-Type, Authorization, X-Requested-With',
   );
-  if (req.method === 'OPTIONS') res.sendStatus(200);
+  if (req.method === 'OPTIONS') {
+    res.sendStatus(200);
+    return;
+  }
   next();
 });
 

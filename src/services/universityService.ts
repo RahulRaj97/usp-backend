@@ -33,8 +33,21 @@ export const createUniversity = async (
   return university;
 };
 
-export const getAllUniversities = async (): Promise<IUniversity[]> => {
-  return await universityModel.find();
+export interface UniversityFilters {
+  search?: string;
+}
+
+export const getAllUniversities = async (filters: UniversityFilters = {}): Promise<IUniversity[]> => {
+  const query: any = {};
+  
+  if (filters.search) {
+    query.name = { 
+      $regex: filters.search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 
+      $options: 'i' 
+    };
+  }
+
+  return await universityModel.find(query);
 };
 
 export const getUniversityById = async (

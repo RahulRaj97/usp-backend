@@ -24,6 +24,7 @@ export interface AgentProgrammeFilters {
   openIntakeOnly?: boolean;               // shorthand for status=open
   page?: number;
   limit?: number;
+  universityId?: string;
 }
 
 export interface AdminProgrammeFilters extends AgentProgrammeFilters {
@@ -137,7 +138,7 @@ export async function listProgrammesForAgent(filters: AgentProgrammeFilters) {
   const skip  = (page - 1) * limit;
 
   // 1) Build the "match" object for Programme fields:
-  const match: FilterQuery<IProgramme> = {};
+  const match: FilterQuery<IProgramme> = { published: true };
 
   if (filters.search) {
     // Escape special characters in the search string
@@ -148,6 +149,11 @@ export async function listProgrammesForAgent(filters: AgentProgrammeFilters) {
       { description: re },
       { lengthBreakdown: re }
     ];
+  }
+
+  if (filters.universityId) {
+    console.log('Filtering by universityId:', filters.universityId);
+    match.universityId = filters.universityId;
   }
 
   if (filters.type)           match.type           = { $in: filters.type };
@@ -193,11 +199,11 @@ export async function listProgrammesForAgent(filters: AgentProgrammeFilters) {
   if (!filters.location) {
     const [docs, total] = await Promise.all([
       programmeModel
-        .find({ ...match, published: true })
+        .find(match)
         .skip(skip)
         .limit(limit)
         .sort({ name: 1 }),
-      programmeModel.countDocuments({ ...match, published: true }),
+      programmeModel.countDocuments(match),
     ]);
     return {
       programmes: await Promise.all(docs.map(projectProgramme)),
