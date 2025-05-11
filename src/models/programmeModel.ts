@@ -163,7 +163,7 @@ const ProgrammeSchema = new Schema<IProgramme>(
       ref: 'University',
       required: true,
     },
-    name: { type: String, required: true, unique: true },
+    name: { type: String, required: true},
     description: { type: String },
     type: {
       type: String,
