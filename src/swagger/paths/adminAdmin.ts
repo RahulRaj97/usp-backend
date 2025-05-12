@@ -70,6 +70,43 @@ export const adminAdminPaths: OpenAPIV3.PathsObject = {
   },
 
   '/api/admin': {
+    get: {
+      tags: ['Admin Management'],
+      summary: 'List Admins',
+      description: 'Get a paginated list of admins with optional search',
+      security: [{ BearerAuth: [] }],
+      parameters: [
+        {
+          name: 'search',
+          in: 'query',
+          schema: { type: 'string' },
+          description: 'Search term for admin name or email',
+        },
+        {
+          name: 'page',
+          in: 'query',
+          schema: { type: 'integer', minimum: 1, default: 1 },
+          description: 'Page number',
+        },
+        {
+          name: 'limit',
+          in: 'query',
+          schema: { type: 'integer', minimum: 1, maximum: 100, default: 20 },
+          description: 'Number of items per page',
+        },
+      ],
+      responses: {
+        200: {
+          description: 'List of admins',
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/AdminListResponse' },
+            },
+          },
+        },
+        401: { description: 'Unauthorized' },
+      },
+    },
     post: {
       tags: ['Admin Management'],
       summary: 'Create Admin',

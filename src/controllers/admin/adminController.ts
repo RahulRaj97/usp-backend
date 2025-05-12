@@ -6,6 +6,7 @@ import {
   createAdmin,
   getAdminById,
   updateAdmin,
+  listAdmins,
 } from '../../services/adminService';
 import { uploadFileBufferToS3 } from '../../services/s3UploadHelpter';
 import { StatusCodes } from '../../utils/httpStatuses';
@@ -107,5 +108,24 @@ export const updateAdminController = async (
     res.status(StatusCodes.OK).json(updated);
   } catch (err) {
     next(err);
+  }
+};
+
+export const listAdminsController = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const filters = {
+      search: req.query.search as string | undefined,
+      page: req.query.page ? Number(req.query.page) : undefined,
+      limit: req.query.limit ? Number(req.query.limit) : undefined,
+    };
+
+    const result = await listAdmins(filters);
+    res.status(StatusCodes.OK).json(result);
+  } catch (error) {
+    next(error);
   }
 };

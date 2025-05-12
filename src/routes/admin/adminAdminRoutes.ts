@@ -9,6 +9,7 @@ import {
   createAdminController,
   getAdminByIdController,
   updateAdminController,
+  listAdminsController,
 } from '../../controllers/admin/adminController';
 import { uploadToS3 } from '../../services/s3Uploader';
 import multer from 'multer';
@@ -19,6 +20,7 @@ router.post('/login', loginUser);
 router.post('/refresh', refreshToken);
 router.post('/logout', authenticate, logoutUser);
 
+router.get('/', authenticate, listAdminsController);
 router.get('/profile/:id', authenticate, getAdminByIdController);
 
 const memoryUpload = multer();

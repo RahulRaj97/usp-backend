@@ -79,4 +79,23 @@ export const adminAdminSchemas: OpenAPIV3.ComponentsObject['schemas'] = {
       updatedAt: { type: 'string', format: 'date-time' },
     },
   },
+
+  AdminListResponse: {
+    type: 'object',
+    properties: {
+      admins: {
+        type: 'array',
+        items: { $ref: '#/components/schemas/Admin' }
+      },
+      totalPages: {
+        type: 'integer',
+        description: 'Total number of pages available'
+      },
+      currentPage: {
+        type: 'integer',
+        description: 'Current page number'
+      }
+    },
+    required: ['admins', 'totalPages', 'currentPage']
+  },
 };

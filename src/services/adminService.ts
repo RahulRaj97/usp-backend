@@ -39,24 +39,43 @@ export const getAdminByUserId = async (userId: string): Promise<IAdmin> => {
   return admin;
 };
 
-/**
- * List Admins with optional pagination
- */
-export const listAdmins = async (
-  page = 1,
-  limit = 10,
-): Promise<{ admins: IAdmin[]; totalPages: number; currentPage: number }> => {
+export interface AdminFilters {
+  search?: string;
+  page?: number;
+  limit?: number;
+}
+
+export async function listAdmins(filters: AdminFilters = {}) {
+  const page = filters.page ?? 1;
+  const limit = filters.limit ?? 20;
   const skip = (page - 1) * limit;
+
+  const query: any = {};
+
+  if (filters.search) {
+    const searchRegex = new RegExp(filters.search, 'i');
+    query.$or = [
+      { firstName: searchRegex },
+      { lastName: searchRegex },
+      { email: searchRegex }
+    ];
+  }
+
   const [admins, total] = await Promise.all([
-    AdminModel.find().lean().skip(skip).limit(limit),
-    AdminModel.countDocuments(),
+    AdminModel.find(query)
+      .skip(skip)
+      .limit(limit)
+      .sort({ createdAt: -1 })
+      .populate('user', 'email profileImage'),
+    AdminModel.countDocuments(query)
   ]);
+
   return {
     admins,
     totalPages: Math.ceil(total / limit),
-    currentPage: page,
+    currentPage: page
   };
-};
+}
 
 export const createAdmin = async (data: CreateAdminInput): Promise<IAdmin> => {
   const { email, password, firstName, lastName, phone, profileImage, address } =
