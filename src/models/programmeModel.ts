@@ -201,9 +201,6 @@ ProgrammeSchema.set('toJSON', {
   },
 });
 
-ProgrammeSchema.index({ type: 1 });
-ProgrammeSchema.index({ name: 'text' });
-
 ProgrammeSchema.pre(/^find/, function (this: mongoose.Query<any, any>, next) {
   this.populate(
     'universityId',
