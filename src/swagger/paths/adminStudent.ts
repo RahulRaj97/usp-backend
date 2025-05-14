@@ -28,6 +28,12 @@ export const adminStudentPaths: OpenAPIV3.PathsObject = {
           description: 'Filter by gender',
         },
         {
+          name: 'companyId',
+          in: 'query',
+          schema: { type: 'string' },
+          description: 'Filter by company ID',
+        },
+        {
           name: 'page',
           in: 'query',
           schema: { type: 'integer', default: 1 },
@@ -38,7 +44,7 @@ export const adminStudentPaths: OpenAPIV3.PathsObject = {
           in: 'query',
           schema: { type: 'integer', default: 10 },
           description: 'Items per page',
-        },
+        }
       ],
       responses: {
         200: {

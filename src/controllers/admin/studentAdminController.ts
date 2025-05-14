@@ -24,6 +24,7 @@ export const listStudentsAdminController = async (
       firstName: q.firstName,
       lastName: q.lastName,
       gender: q.gender as Gender,
+      companyId: q.companyId,
       page: q.page ? Number(q.page) : undefined,
       limit: q.limit ? Number(q.limit) : undefined,
     };

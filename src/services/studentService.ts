@@ -168,19 +168,21 @@ export interface AdminStudentFilters {
   gender?: Gender;
   page?: number;
   limit?: number;
+  companyId?: string;
 }
 
 /**
  * Admin: list students with pagination and filters
  */
 export const listStudentsAdmin = async (filters: AdminStudentFilters = {}) => {
-  const { firstName, lastName, gender, page = 1, limit = 10 } = filters;
+  const { firstName, lastName, gender, page = 1, limit = 10, companyId } = filters;
   const skip = (page - 1) * limit;
 
   const query: any = {};
   if (firstName) query.firstName = new RegExp(firstName, 'i');
   if (lastName) query.lastName = new RegExp(lastName, 'i');
   if (gender) query.gender = gender;
+  if (companyId) query.companyId = companyId;
 
   const [students, total] = await Promise.all([
     StudentModel.find(query).lean().skip(skip).limit(limit),
