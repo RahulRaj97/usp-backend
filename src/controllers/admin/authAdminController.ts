@@ -66,7 +66,7 @@ export const adminLogin = async (
  * Admin logout: clears refresh token
  */
 export const adminLogout = async (
-  req: Request,
+  _req: Request,
   res: Response,
   next: NextFunction,
 ) => {

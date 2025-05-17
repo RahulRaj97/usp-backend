@@ -44,6 +44,7 @@ export const createAdminController = async (
             statusCode: 400,
             message: 'Invalid JSON in "address" field',
           });
+          return;
         }
       }
     }
@@ -56,6 +57,7 @@ export const createAdminController = async (
         statusCode: 400,
         message: 'Invalid or missing role',
       });
+      return;
     }
 
     // 2) extract the raw file (in memory)
@@ -105,6 +107,7 @@ export const updateAdminController = async (
             statusCode: 400,
             message: 'Invalid JSON in "address" field',
           });
+          return;
         }
       }
     }
@@ -118,6 +121,7 @@ export const updateAdminController = async (
           statusCode: 400,
           message: 'Invalid role',
         });
+        return;
       }
     }
 
