@@ -148,6 +148,22 @@ export const applicationSchemas: OpenAPIV3.ComponentsObject['schemas'] = {
     },
   },
 
+  StageStatusUpdateRequest: {
+    type: 'object',
+    properties: {
+      stage: { $ref: '#/components/schemas/ApplicationStage' },
+      done: { type: 'boolean', description: 'Mark as done (true) or undone (false)' },
+      notes: { type: 'string', description: 'Optional notes for this action' },
+      attachments: {
+        type: 'array',
+        items: { type: 'string', format: 'uri' },
+        description: 'Optional attachments (S3 URLs, etc.)',
+      },
+    },
+    required: ['stage', 'done'],
+    description: 'The authenticated user is used as the admin performing the action.'
+  },
+
   Application: {
     type: 'object',
     properties: {
@@ -189,9 +205,29 @@ export const applicationSchemas: OpenAPIV3.ComponentsObject['schemas'] = {
         format: 'date-time',
       },
       isWithdrawn: { type: 'boolean', example: false },
+      stageStatus: {
+        type: 'array',
+        items: {
+          type: 'object',
+          properties: {
+            stage: { $ref: '#/components/schemas/ApplicationStage' },
+            done: { type: 'boolean' },
+            doneAt: { type: 'string', format: 'date-time' },
+            doneBy: { type: 'string' },
+            notes: { type: 'string' },
+            attachments: {
+              type: 'array',
+              items: { type: 'string', format: 'uri' },
+            },
+          },
+          required: ['stage', 'done'],
+        },
+        description: 'Current status of all stages',
+      },
       stageHistory: {
         type: 'array',
         items: { $ref: '#/components/schemas/StageHistoryEntry' },
+        description: 'Audit trail of all stage completions/changes',
       },
       createdAt: {
         type: 'string',
@@ -211,6 +247,8 @@ export const applicationSchemas: OpenAPIV3.ComponentsObject['schemas'] = {
       'status',
       'currentStage',
       'isWithdrawn',
+      'stageStatus',
+      'stageHistory',
       'createdAt',
       'updatedAt',
     ],

@@ -10,6 +10,7 @@ import {
   withdrawApplicationAdmin,
   getApplicationByIdAdmin,
   uploadSupportingDocsAdmin,
+  setStageStatusAdmin,
 } from '../../controllers/admin/applicationAdminController';
 
 export const upload = multer({ storage: multer.memoryStorage() });
@@ -26,6 +27,7 @@ router.get('/:id', getApplicationByIdAdmin);
 router.post('/', createApplicationAdmin);
 router.put('/:id', updateApplicationAdmin);
 router.patch('/:id/withdraw', withdrawApplicationAdmin);
+router.patch('/:id/stage-status', setStageStatusAdmin);
 router.delete('/:id', deleteApplicationAdmin);
 
 router.post(

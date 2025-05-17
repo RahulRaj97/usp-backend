@@ -8,6 +8,7 @@ import {
   getApplicationById,
   AdminApplicationDto,
   ApplicationFilters as AdminApplicationFilters,
+  setStageStatus,
 } from '../../services/applicationService';
 import { StatusCodes } from '../../utils/httpStatuses';
 import { uploadFileBufferToS3 } from '../../services/s3UploadHelpter';
@@ -147,6 +148,24 @@ export const uploadSupportingDocsAdmin = async (
     const updated = await adminUpdateApplication(appId, {
       supportingDocuments: urls,
     });
+    res.status(StatusCodes.OK).json(updated);
+  } catch (err) {
+    next(err);
+  }
+};
+
+/**
+ * Admin: toggle stage status (done/undone) for an application
+ */
+export const setStageStatusAdmin = async (
+  req: Request<{ id: string }, {}, { stage: string; done: boolean; notes?: string; attachments?: string[] }>,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const { stage, done, notes, attachments } = req.body;
+    const adminId = (req.user as any).id || (req.user as any)._id;
+    const updated = await setStageStatus(req.params.id, stage as any, done, adminId, notes, attachments);
     res.status(StatusCodes.OK).json(updated);
   } catch (err) {
     next(err);

@@ -1,11 +1,12 @@
 // src/services/applicationService.ts
-
+import mongoose from 'mongoose';
 import agentModel from '../models/agentModel';
 import applicationModel, {
   IApplication,
   ApplicationStage,
   ApplicationStatus,
   StageHistoryEntry,
+  STAGE_VALUES,
 } from '../models/applicationModel';
 import { NotFoundError, UnauthorizedError } from '../utils/appError';
 import { getAgentById } from './agentService';
@@ -33,6 +34,52 @@ async function enrichOne(id: string): Promise<EnrichedApp> {
   return { ...rest, student: studentId } as EnrichedApp;
 }
 
+/**
+ * Set the status of a stage (done/undone), update stageStatus, stageHistory, and currentStage accordingly.
+ */
+export async function setStageStatus(
+  applicationId: string,
+  stage: ApplicationStage,
+  done: boolean,
+  adminId: string,
+  notes?: string,
+  attachments?: string[]
+) {
+  const app = await applicationModel.findById(applicationId);
+  if (!app) throw new NotFoundError('Application not found');
+  // Ensure adminId is a mongoose.Types.ObjectId
+  const adminObjectId = new mongoose.Types.ObjectId(adminId);
+  // Update or add the stageStatus entry
+  let entry = app.stageStatus.find(s => s.stage === stage);
+  if (!entry) {
+    entry = { stage, done, doneAt: done ? new Date() : undefined, doneBy: done ? adminObjectId : undefined, notes, attachments };
+    app.stageStatus.push(entry);
+  } else {
+    entry.done = done;
+    entry.doneAt = done ? new Date() : undefined;
+    entry.doneBy = done ? adminObjectId : undefined;
+    if (notes !== undefined) entry.notes = notes;
+    if (attachments !== undefined) entry.attachments = attachments;
+  }
+  // Add to stageHistory for audit
+  app.stageHistory.push({
+    stage,
+    notes,
+    completedAt: new Date(),
+  });
+  // Update currentStage to the first not-done stage, or last stage if all done
+  const firstNotDone = STAGE_VALUES.find(
+    s => !(app.stageStatus.find(ss => ss.stage === s)?.done)
+  );
+  if (firstNotDone) {
+    app.currentStage = firstNotDone;
+  } else {
+    app.currentStage = STAGE_VALUES[STAGE_VALUES.length - 1];
+  }
+  await app.save();
+  return enrichOne(applicationId);
+}
+
 /** Agent: create a new application */
 export async function createApplication(
   agentUserId: string,
@@ -48,6 +95,8 @@ export async function createApplication(
     companyId: agent.companyId,
     programmeIds,
     priorityMapping,
+    currentStage: STAGE_VALUES[0],
+    stageStatus: [],
   });
   return enrichOne(app._id.toString());
 }
@@ -177,6 +226,8 @@ export async function adminCreateApplication(
     companyId: agent.companyId,
     submittedAt: new Date(),
     isWithdrawn: false,
+    currentStage: STAGE_VALUES[0],
+    stageStatus: [],
   });
   return enrichOne(app._id.toString());
 }
@@ -217,7 +268,7 @@ export async function listApplicationsAdmin(filters: ApplicationFilters = {}) {
   };
 }
 
-/** Admin: update status, stage (pushing to history), notes, attachments */
+/** Admin: update status, stage (pushing to history), notes, attachments, or stageStatus */
 export async function adminUpdateApplication(
   id: string,
   data: Partial<{
@@ -225,6 +276,11 @@ export async function adminUpdateApplication(
     supportingDocuments: string[];
     status: ApplicationStatus;
     currentStage: ApplicationStage;
+    stage: ApplicationStage;
+    done: boolean;
+    adminId: string;
+    stageNotes?: string;
+    stageAttachments?: string[];
   }>,
 ): Promise<EnrichedApp> {
   const app = await applicationModel.findById(id);
@@ -232,6 +288,13 @@ export async function adminUpdateApplication(
 
   if (data.status && data.status !== app.status) {
     app.status = data.status;
+  }
+
+  // If stage and done are provided, update stageStatus
+  if (data.stage && typeof data.done === 'boolean' && data.adminId) {
+    await setStageStatus(id, data.stage, data.done, data.adminId, data.stageNotes, data.stageAttachments);
+    // refetch app after setStageStatus
+    return enrichOne(id);
   }
 
   if (data.currentStage && data.currentStage !== app.currentStage) {

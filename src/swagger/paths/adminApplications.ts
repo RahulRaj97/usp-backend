@@ -243,4 +243,42 @@ export const adminApplicationPaths: OpenAPIV3.PathsObject = {
       },
     },
   },
+
+  '/api/admin/applications/{id}/stage-status': {
+    patch: {
+      tags: ['Admin Applications'],
+      summary: 'Toggle Stage Status (Admin)',
+      description: 'Mark any stage as done or undone, with optional notes and attachments. Updates stageStatus, stageHistory, and currentStage.',
+      security: [{ BearerAuth: [] }],
+      parameters: [
+        {
+          name: 'id',
+          in: 'path',
+          schema: { type: 'string' },
+          required: true,
+        },
+      ],
+      requestBody: {
+        required: true,
+        content: {
+          'application/json': {
+            schema: { $ref: '#/components/schemas/StageStatusUpdateRequest' },
+          },
+        },
+      },
+      responses: {
+        200: {
+          description: 'Updated application with new stage status',
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/Application' },
+            },
+          },
+        },
+        400: { description: 'Validation error' },
+        404: { description: 'Not found' },
+        401: { description: 'Unauthorized' },
+      },
+    },
+  },
 };

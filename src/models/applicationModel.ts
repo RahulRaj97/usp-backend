@@ -76,6 +76,24 @@ const StageHistorySchema = new Schema<StageHistoryEntry>(
   { _id: false },
 );
 
+export interface StageStatusEntry {
+  stage: ApplicationStage;
+  done: boolean;
+  doneAt?: Date;
+  doneBy?: mongoose.Types.ObjectId;
+  notes?: string;
+  attachments?: string[];
+}
+
+const StageStatusSchema = new Schema<StageStatusEntry>({
+  stage: { type: String, enum: STAGE_VALUES, required: true },
+  done: { type: Boolean, default: false },
+  doneAt: { type: Date },
+  doneBy: { type: Schema.Types.ObjectId, ref: 'Admin' },
+  notes: { type: String },
+  attachments: [{ type: String }],
+}, { _id: false });
+
 export interface IApplication extends Document {
   _id: mongoose.Types.ObjectId;
   applicationCode: string;
@@ -94,6 +112,7 @@ export interface IApplication extends Document {
   submittedAt?: Date;
   isWithdrawn: boolean;
   stageHistory: StageHistoryEntry[];
+  stageStatus: StageStatusEntry[];
   createdAt: Date;
   updatedAt: Date;
 }
@@ -142,7 +161,7 @@ const ApplicationSchema = new Schema<IApplication>(
     currentStage: {
       type: String,
       enum: STAGE_VALUES,
-      default: 'Collect Personal Information',
+      default: STAGE_VALUES[0],
       required: true,
     },
 
@@ -153,6 +172,11 @@ const ApplicationSchema = new Schema<IApplication>(
 
     stageHistory: {
       type: [StageHistorySchema],
+      default: [],
+    },
+
+    stageStatus: {
+      type: [StageStatusSchema],
       default: [],
     },
   },
