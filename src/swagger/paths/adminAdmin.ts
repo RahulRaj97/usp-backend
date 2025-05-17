@@ -116,19 +116,7 @@ export const adminAdminPaths: OpenAPIV3.PathsObject = {
         required: true,
         content: {
           'multipart/form-data': {
-            schema: {
-              type: 'object',
-              required: ['email', 'password', 'firstName', 'lastName'],
-              properties: {
-                email: { type: 'string', format: 'email' },
-                password: { type: 'string', format: 'password' },
-                firstName: { type: 'string' },
-                lastName: { type: 'string' },
-                phone: { type: 'string' },
-                profileImage: { type: 'string', format: 'binary' },
-                address: { $ref: '#/components/schemas/Address' },
-              },
-            },
+            schema: { $ref: '#/components/schemas/CreateAdminRequest' },
           },
         },
       },
@@ -180,7 +168,7 @@ export const adminAdminPaths: OpenAPIV3.PathsObject = {
     put: {
       tags: ['Admin Management'],
       summary: 'Update Admin',
-      description: 'Update an existing admin’s details',
+      description: "Update an existing admin's details",
       security: [{ BearerAuth: [] }],
       parameters: [
         {
@@ -195,17 +183,7 @@ export const adminAdminPaths: OpenAPIV3.PathsObject = {
         required: true,
         content: {
           'multipart/form-data': {
-            schema: {
-              type: 'object',
-              properties: {
-                firstName: { type: 'string' },
-                lastName: { type: 'string' },
-                phone: { type: 'string' },
-                profileImage: { type: 'string', format: 'binary' },
-                address: { $ref: '#/components/schemas/Address' },
-                password: { type: 'string', minLength: 8 },
-              },
-            },
+            schema: { $ref: '#/components/schemas/UpdateAdminRequest' },
           },
         },
       },

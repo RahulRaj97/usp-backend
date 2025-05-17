@@ -1,7 +1,7 @@
 // File: src/services/adminService.ts
 // =====================================================================
 import mongoose from 'mongoose';
-import AdminModel, { IAdmin } from '../models/adminModel';
+import AdminModel, { IAdmin, AdminRole } from '../models/adminModel';
 import userModel from '../models/userModel';
 import { NotFoundError, BadRequestError } from '../utils/appError';
 
@@ -13,6 +13,7 @@ interface CreateAdminInput {
   phone?: string;
   profileImage?: string;
   address?: object;
+  role: AdminRole;
 }
 
 /**
@@ -78,8 +79,7 @@ export async function listAdmins(filters: AdminFilters = {}) {
 }
 
 export const createAdmin = async (data: CreateAdminInput): Promise<IAdmin> => {
-  const { email, password, firstName, lastName, phone, profileImage, address } =
-    data;
+  const { email, password, firstName, lastName, phone, profileImage, address, role } = data;
   if (await userModel.findOne({ email }))
     throw new BadRequestError('Email already in use');
   const user = await userModel.create({
@@ -94,6 +94,7 @@ export const createAdmin = async (data: CreateAdminInput): Promise<IAdmin> => {
     firstName,
     lastName,
     phone,
+    role,
   });
   // now fetch & return with your automatic populate hook
   const admin = await AdminModel.findOne({ user: user._id }).lean();
@@ -107,6 +108,7 @@ interface UpdateAdminInput {
   profileImage?: string;
   address?: object;
   password?: string;
+  role?: AdminRole;
 }
 
 export const updateAdmin = async (
@@ -119,6 +121,7 @@ export const updateAdmin = async (
   if (data.firstName !== undefined) admin.firstName = data.firstName;
   if (data.lastName !== undefined) admin.lastName = data.lastName;
   if (data.phone !== undefined) admin.phone = data.phone;
+  if (data.role !== undefined) admin.role = data.role;
   await admin.save();
 
   const userUpdates: any = {};

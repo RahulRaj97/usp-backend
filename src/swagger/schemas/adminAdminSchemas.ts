@@ -39,7 +39,7 @@ export const adminAdminSchemas: OpenAPIV3.ComponentsObject['schemas'] = {
 
   CreateAdminRequest: {
     type: 'object',
-    required: ['email', 'password', 'firstName', 'lastName'],
+    required: ['email', 'password', 'firstName', 'lastName', 'role'],
     properties: {
       email: { type: 'string', format: 'email' },
       password: { type: 'string', minLength: 8 },
@@ -48,6 +48,20 @@ export const adminAdminSchemas: OpenAPIV3.ComponentsObject['schemas'] = {
       phone: { type: 'string' },
       profileImage: { type: 'string', format: 'binary' },
       address: { $ref: '#/components/schemas/Address' },
+      role: {
+        type: 'string',
+        enum: [
+          'super_admin',
+          'sales_regional_director',
+          'sales_country_manager',
+          'sales_account_manager',
+          'admissions_manager',
+          'application_processing',
+          'compliance',
+          'finance',
+        ],
+        description: 'Role of the admin',
+      },
     },
   },
 
@@ -60,6 +74,20 @@ export const adminAdminSchemas: OpenAPIV3.ComponentsObject['schemas'] = {
       profileImage: { type: 'string', format: 'binary' },
       address: { $ref: '#/components/schemas/Address' },
       password: { type: 'string', minLength: 8 },
+      role: {
+        type: 'string',
+        enum: [
+          'super_admin',
+          'sales_regional_director',
+          'sales_country_manager',
+          'sales_account_manager',
+          'admissions_manager',
+          'application_processing',
+          'compliance',
+          'finance',
+        ],
+        description: 'Role of the admin',
+      },
     },
   },
 
@@ -77,6 +105,20 @@ export const adminAdminSchemas: OpenAPIV3.ComponentsObject['schemas'] = {
       isEmailVerified: { type: 'boolean' },
       createdAt: { type: 'string', format: 'date-time' },
       updatedAt: { type: 'string', format: 'date-time' },
+      role: {
+        type: 'string',
+        enum: [
+          'super_admin',
+          'sales_regional_director',
+          'sales_country_manager',
+          'sales_account_manager',
+          'admissions_manager',
+          'application_processing',
+          'compliance',
+          'finance',
+        ],
+        description: 'Role of the admin',
+      },
     },
   },
 

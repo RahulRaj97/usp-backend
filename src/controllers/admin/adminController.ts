@@ -1,6 +1,6 @@
 // src/controllers/admin/adminController.ts
 import { Request, Response, NextFunction } from 'express';
-import AdminModel from '../../models/adminModel';
+import AdminModel, { AdminRole } from '../../models/adminModel';
 import userModel from '../../models/userModel';
 import {
   createAdmin,
@@ -46,6 +46,16 @@ export const createAdminController = async (
           });
         }
       }
+    }
+
+    const allowedRoles = Object.values(AdminRole);
+
+    if (!req.body.role || !allowedRoles.includes(req.body.role)) {
+      res.status(400).json({
+        status: 'error',
+        statusCode: 400,
+        message: 'Invalid or missing role',
+      });
     }
 
     // 2) extract the raw file (in memory)
@@ -96,6 +106,18 @@ export const updateAdminController = async (
             message: 'Invalid JSON in "address" field',
           });
         }
+      }
+    }
+
+    // Validate role if present
+    if (req.body.role) {
+      const allowedRoles = Object.values(AdminRole);
+      if (!allowedRoles.includes(req.body.role)) {
+        res.status(400).json({
+          status: 'error',
+          statusCode: 400,
+          message: 'Invalid role',
+        });
       }
     }
 
