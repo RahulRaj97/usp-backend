@@ -98,56 +98,44 @@ async function findMatchingStudentUserIds(keyword: string) {
  */
 export const searchAllAdmin = async (keyword: string) => {
   const regex = new RegExp(keyword, 'i');
-
-  // pre-find student-emails
   const matchingStudentUserIds = await findMatchingStudentUserIds(keyword);
 
-  const [programmes, universities, companies, students, agents] =
-    await Promise.all([
-      // Programmes
-      ProgrammeModel.find({
-        $or: [{ name: regex }, { description: regex }, { modules: regex }],
-      }).lean(),
-      // Universities
-      universityModel
-        .find({
-          $or: [
-            { name: regex },
-            { website: regex },
-            { description: regex },
-            { 'address.city': regex },
-            { 'address.country': regex },
-          ],
-        })
-        .lean(),
-      // Companies
-      companyModel
-        .find({
-          $or: [
-            { name: regex },
-            { website: regex },
-            { ntn: regex },
-            { 'address.city': regex },
-            { 'address.country': regex },
-          ],
-        })
-        .lean(),
-      // Students (unrestricted)
-      StudentModel.find({
-        $or: [
-          { firstName: regex },
-          { lastName: regex },
-          { studentId: regex },
-          ...(matchingStudentUserIds.length
-            ? [{ user: { $in: matchingStudentUserIds } }]
-            : []),
-        ],
-      }).lean(),
-      // Agents (unrestricted)
-      AgentModel.find({
-        $or: [{ firstName: regex }, { lastName: regex }, { email: regex }],
-      }).lean(),
-    ]);
+  const [programmes, universities, companies, students, agents] = await Promise.all([
+    ProgrammeModel.find({
+      $or: [{ name: regex }, { description: regex }, { modules: regex }],
+    }).limit(20).lean(),
+    universityModel.find({
+      $or: [
+        { name: regex },
+        { website: regex },
+        { description: regex },
+        { 'address.city': regex },
+        { 'address.country': regex },
+      ],
+    }).limit(20).lean(),
+    companyModel.find({
+      $or: [
+        { name: regex },
+        { website: regex },
+        { ntn: regex },
+        { 'address.city': regex },
+        { 'address.country': regex },
+      ],
+    }).limit(20).lean(),
+    StudentModel.find({
+      $or: [
+        { firstName: regex },
+        { lastName: regex },
+        { studentId: regex },
+        ...(matchingStudentUserIds.length
+          ? [{ user: { $in: matchingStudentUserIds } }]
+          : []),
+      ],
+    }).limit(20).lean(),
+    AgentModel.find({
+      $or: [{ firstName: regex }, { lastName: regex }, { email: regex }],
+    }).limit(20).lean(),
+  ]);
 
   return { programmes, universities, companies, students, agents };
 };
