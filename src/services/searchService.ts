@@ -100,10 +100,10 @@ export const searchAllAdmin = async (keyword: string) => {
   const regex = new RegExp(keyword, 'i');
   const matchingStudentUserIds = await findMatchingStudentUserIds(keyword);
 
-  const [programmes, universities, companies, students, agents] = await Promise.all([
+  const [programmesRaw, universities, companies, students, agents] = await Promise.all([
     ProgrammeModel.find({
       $or: [{ name: regex }, { description: regex }, { modules: regex }],
-    }).limit(20).lean(),
+    }).limit(20).populate('universityId').lean(),
     universityModel.find({
       $or: [
         { name: regex },
@@ -136,6 +136,14 @@ export const searchAllAdmin = async (keyword: string) => {
       $or: [{ firstName: regex }, { lastName: regex }, { email: regex }],
     }).limit(20).lean(),
   ]);
+
+  // Rename universityId to university in each programme
+  const programmes = programmesRaw.map((programme) => {
+    if (programme.universityId) {
+      return { ...programme, university: programme.universityId, universityId: undefined };
+    }
+    return programme;
+  });
 
   return { programmes, universities, companies, students, agents };
 };
