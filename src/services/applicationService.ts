@@ -43,16 +43,23 @@ export async function setStageStatus(
   done: boolean,
   adminId: string,
   notes?: string,
-  attachments?: string[]
+  attachments?: string[],
 ) {
   const app = await applicationModel.findById(applicationId);
   if (!app) throw new NotFoundError('Application not found');
   // Ensure adminId is a mongoose.Types.ObjectId
   const adminObjectId = new mongoose.Types.ObjectId(adminId);
   // Update or add the stageStatus entry
-  let entry = app.stageStatus.find(s => s.stage === stage);
+  let entry = app.stageStatus.find((s) => s.stage === stage);
   if (!entry) {
-    entry = { stage, done, doneAt: done ? new Date() : undefined, doneBy: done ? adminObjectId : undefined, notes, attachments };
+    entry = {
+      stage,
+      done,
+      doneAt: done ? new Date() : undefined,
+      doneBy: done ? adminObjectId : undefined,
+      notes,
+      attachments,
+    };
     app.stageStatus.push(entry);
   } else {
     entry.done = done;
@@ -69,7 +76,7 @@ export async function setStageStatus(
   });
   // Update currentStage to the first not-done stage, or last stage if all done
   const firstNotDone = STAGE_VALUES.find(
-    s => !(app.stageStatus.find(ss => ss.stage === s)?.done)
+    (s) => !app.stageStatus.find((ss) => ss.stage === s)?.done,
   );
   if (firstNotDone) {
     app.currentStage = firstNotDone;
@@ -96,6 +103,7 @@ export async function createApplication(
     programmeIds,
     priorityMapping,
     currentStage: STAGE_VALUES[0],
+    submittedAt: new Date(),
     stageStatus: [],
   });
   return enrichOne(app._id.toString());
@@ -292,7 +300,14 @@ export async function adminUpdateApplication(
 
   // If stage and done are provided, update stageStatus
   if (data.stage && typeof data.done === 'boolean' && data.adminId) {
-    await setStageStatus(id, data.stage, data.done, data.adminId, data.stageNotes, data.stageAttachments);
+    await setStageStatus(
+      id,
+      data.stage,
+      data.done,
+      data.adminId,
+      data.stageNotes,
+      data.stageAttachments,
+    );
     // refetch app after setStageStatus
     return enrichOne(id);
   }
