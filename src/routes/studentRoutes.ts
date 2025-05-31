@@ -20,7 +20,14 @@ router.post(
   upload.array('documents'),
   createStudentController,
 );
-router.put('/:id', authenticate, updateStudentController);
+
+router.put(
+  '/:id',
+  authenticate,
+  upload.fields([{ name: 'profileImage', maxCount: 1 }, { name: 'documents' }]),
+  updateStudentController,
+);
+
 router.delete('/:id', authenticate, deleteStudentController);
 router.get('/:id', authenticate, getStudentByIdController);
 router.get('/', authenticate, listStudentsController);

@@ -11,17 +11,17 @@ import { uploadFileBufferToS3 } from './s3UploadHelpter';
 
 export interface AgentProgrammeFilters {
   search?: string;
-  type?: ProgrammeType[];                // multi-select programme types
-  deliveryMethod?: DeliveryMethod[];      // multi-select delivery methods
-  location?: string[];                    // city or country codes from university.address
+  type?: ProgrammeType[]; // multi-select programme types
+  deliveryMethod?: DeliveryMethod[]; // multi-select delivery methods
+  location?: string[]; // city or country codes from university.address
   intakeStatus?: IProgramIntake['status'][]; // e.g. ['open','likely_open']
-  intakeDateFrom?: Date;                  // lower bound on intake.openDate
-  intakeDateTo?: Date;                    // upper bound on intake.openDate
+  intakeDateFrom?: Date; // lower bound on intake.openDate
+  intakeDateTo?: Date; // upper bound on intake.openDate
   minTuition?: number;
   maxTuition?: number;
   minApplicationFee?: number;
   maxApplicationFee?: number;
-  openIntakeOnly?: boolean;               // shorthand for status=open
+  openIntakeOnly?: boolean; // shorthand for status=open
   page?: number;
   limit?: number;
   universityId?: string;
@@ -101,7 +101,9 @@ interface ProgrammeResponse {
 
 async function projectProgramme(doc: IProgramme & { universityId: any }) {
   // ensure we have the full university object
-  const uni = doc.universityId?.toObject ? doc.universityId.toObject() : doc.universityId;
+  const uni = doc.universityId?.toObject
+    ? doc.universityId.toObject()
+    : doc.universityId;
   uni.id = uni._id.toString();
   delete uni._id;
   delete uni.__v;
@@ -133,9 +135,9 @@ async function projectProgramme(doc: IProgramme & { universityId: any }) {
 
 /** AGENT: list only published programmes with filters */
 export async function listProgrammesForAgent(filters: AgentProgrammeFilters) {
-  const page  = filters.page  ?? 1;
+  const page = filters.page ?? 1;
   const limit = filters.limit ?? 20;
-  const skip  = (page - 1) * limit;
+  const skip = (page - 1) * limit;
 
   // 1) Build the "match" object for Programme fields:
   const match: FilterQuery<IProgramme> = { published: true };
@@ -144,11 +146,7 @@ export async function listProgrammesForAgent(filters: AgentProgrammeFilters) {
     // Escape special characters in the search string
     const escapedSearch = filters.search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     const re = new RegExp(escapedSearch, 'i');
-    match.$or = [
-      { name: re },
-      { description: re },
-      { lengthBreakdown: re }
-    ];
+    match.$or = [{ name: re }];
   }
 
   if (filters.universityId) {
@@ -156,8 +154,9 @@ export async function listProgrammesForAgent(filters: AgentProgrammeFilters) {
     match.universityId = filters.universityId;
   }
 
-  if (filters.type)           match.type           = { $in: filters.type };
-  if (filters.deliveryMethod) match.deliveryMethod = { $in: filters.deliveryMethod };
+  if (filters.type) match.type = { $in: filters.type };
+  if (filters.deliveryMethod)
+    match.deliveryMethod = { $in: filters.deliveryMethod };
 
   if (filters.minTuition || filters.maxTuition) {
     match.tuitionFee = {
@@ -168,8 +167,12 @@ export async function listProgrammesForAgent(filters: AgentProgrammeFilters) {
 
   if (filters.minApplicationFee || filters.maxApplicationFee) {
     match.applicationFee = {
-      ...(filters.minApplicationFee != null ? { $gte: filters.minApplicationFee } : {}),
-      ...(filters.maxApplicationFee != null ? { $lte: filters.maxApplicationFee } : {}),
+      ...(filters.minApplicationFee != null
+        ? { $gte: filters.minApplicationFee }
+        : {}),
+      ...(filters.maxApplicationFee != null
+        ? { $lte: filters.maxApplicationFee }
+        : {}),
     };
   }
 
@@ -181,28 +184,24 @@ export async function listProgrammesForAgent(filters: AgentProgrammeFilters) {
   if (filters.intakeStatus) {
     match.intakes = {
       ...(match.intakes || {}),
-      $elemMatch: { status: { $in: filters.intakeStatus } }
+      $elemMatch: { status: { $in: filters.intakeStatus } },
     };
   }
 
   if (filters.intakeDateFrom || filters.intakeDateTo) {
     const dateQuery: any = {};
     if (filters.intakeDateFrom) dateQuery.$gte = filters.intakeDateFrom;
-    if (filters.intakeDateTo)   dateQuery.$lte = filters.intakeDateTo;
+    if (filters.intakeDateTo) dateQuery.$lte = filters.intakeDateTo;
     match.intakes = {
       ...(match.intakes || {}),
-      $elemMatch: { openDate: dateQuery }
+      $elemMatch: { openDate: dateQuery },
     };
   }
 
   // 2) If no "location" filter, we can just `.find(match)`
   if (!filters.location) {
     const [docs, total] = await Promise.all([
-      programmeModel
-        .find(match)
-        .skip(skip)
-        .limit(limit)
-        .sort({ name: 1 }),
+      programmeModel.find(match).skip(skip).limit(limit).sort({ name: 1 }),
       programmeModel.countDocuments(match),
     ]);
     return {
@@ -222,8 +221,8 @@ export async function listProgrammesForAgent(filters: AgentProgrammeFilters) {
         from: 'universities',
         localField: 'universityId',
         foreignField: '_id',
-        as: 'university'
-      }
+        as: 'university',
+      },
     },
     { $unwind: '$university' },
 
@@ -231,7 +230,7 @@ export async function listProgrammesForAgent(filters: AgentProgrammeFilters) {
     {
       $match: {
         'university.address.country': { $in: filters.location },
-      }
+      },
     },
 
     // now paginate & sort
@@ -262,9 +261,9 @@ export async function listProgrammesForAgent(filters: AgentProgrammeFilters) {
         services: 1,
         images: 1,
         createdAt: 1,
-        updatedAt: 1
-      }
-    }
+        updatedAt: 1,
+      },
+    },
   ];
 
   const [docs, countResult] = await Promise.all([
@@ -272,11 +271,18 @@ export async function listProgrammesForAgent(filters: AgentProgrammeFilters) {
     // for total count, run the same match+lookup+location match but end in {$count:"count"}
     programmeModel.aggregate([
       { $match: { ...match, published: true } },
-      { $lookup: { from:'universities', localField:'universityId', foreignField:'_id', as:'university' } },
-      { $unwind:'$university' },
-      { $match:{ 'university.address.country':{ $in: filters.location } } },
-      { $count: "count" }
-    ])
+      {
+        $lookup: {
+          from: 'universities',
+          localField: 'universityId',
+          foreignField: '_id',
+          as: 'university',
+        },
+      },
+      { $unwind: '$university' },
+      { $match: { 'university.address.country': { $in: filters.location } } },
+      { $count: 'count' },
+    ]),
   ]);
 
   const total = countResult[0]?.count ?? 0;

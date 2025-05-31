@@ -13,6 +13,7 @@ import { uploadFileBufferToS3 } from './s3UploadHelpter';
 import { getCountryCode } from '../utils/countryCodeMap';
 import { generateStudentId } from '../utils/generateStudentId';
 import companyModel from '../models/companyModel';
+import { IUser } from '../models/userModel';
 
 export const createStudent = async (data: any, agent: IAgent) => {
   const session = await mongoose.startSession();
@@ -110,27 +111,213 @@ export const createStudent = async (data: any, agent: IAgent) => {
 };
 
 export const updateStudent = async (id: string, data: any, files: any) => {
-  const existing = await StudentModel.findById(id);
-  if (!existing) throw new NotFoundError('Student not found');
+  const session = await mongoose.startSession();
+  session.startTransaction();
 
-  const newDocuments = (files || []).map((file: any) => ({
-    type: file.fieldname,
-    fileUrl: file.location,
-    uploadedAt: new Date(),
-  }));
+  try {
+    const student = await StudentModel.findById(id).populate<{ user: IUser }>('user');
+    if (!student) throw new NotFoundError('Student not found');
 
-  const updated = await StudentModel.findByIdAndUpdate(
-    id,
-    {
-      ...data,
-      ...(newDocuments.length
-        ? { $push: { documents: { $each: newDocuments } } }
-        : {}),
-    },
-    { new: true },
-  );
+    // Update user details if provided
+    if (data.address || data.profileImage) {
+      const userUpdates: any = {};
+      if (data.email) userUpdates.email = data.email;
+      
+      // Handle address updates
+      if (data.address) {
+        let addressData;
+        try {
+          // Parse address if it's a string
+          if (typeof data.address === 'string') {
+            try {
+              addressData = JSON.parse(data.address);
+            } catch (parseError) {
+              console.error('Address parse error:', parseError);
+              throw new Error('Invalid address JSON format');
+            }
+          } else {
+            addressData = data.address;
+          }
 
-  return updated;
+          // Validate address data structure
+          if (!addressData || typeof addressData !== 'object') {
+            throw new Error('Address must be an object');
+          }
+
+          // Update address using dot notation
+          const updateResult = await userModel.updateOne(
+            { _id: student.user },
+            {
+              $set: {
+                'address.street': addressData.street || '',
+                'address.city': addressData.city || '',
+                'address.state': addressData.state || '',
+                'address.postalCode': addressData.zipCode || addressData.postalCode || '',
+                'address.country': addressData.country || '',
+              }
+            },
+            { session }
+          );
+
+          if (updateResult.modifiedCount === 0) {
+            throw new Error('Failed to update address');
+          }
+        } catch (error: any) {
+          console.error('Address update error:', error);
+          throw new Error(`Address update failed: ${error?.message || 'Unknown error'}`);
+        }
+      }
+      
+      // Handle profile image upload
+      if (data.profileImage && data.profileImage.buffer) {
+        const profileImageUrl = await uploadFileBufferToS3(
+          data.profileImage.buffer,
+          data.profileImage.originalname,
+          'profile-images',
+          student._id.toString(),
+          data.profileImage.mimetype,
+        );
+        userUpdates.profileImage = profileImageUrl;
+      } else if (data.profileImage) {
+        userUpdates.profileImage = data.profileImage;
+      }
+      
+      // Update other user fields if any
+      if (Object.keys(userUpdates).length > 0) {
+        await userModel.findByIdAndUpdate(
+          student.user,
+          { $set: userUpdates },
+          { session }
+        );
+      }
+    }
+
+    // Handle education records
+    if (data.education) {
+      try {
+        // Parse education if it's a string
+        const educationData = typeof data.education === 'string' 
+          ? JSON.parse(data.education) 
+          : data.education;
+
+        // Ensure it's an array
+        const education = Array.isArray(educationData) 
+          ? educationData 
+          : [educationData];
+
+        // Validate each education entry
+        education.forEach((edu: any) => {
+          if (!edu.institutionName || !edu.degree || !edu.year) {
+            throw new Error('Education entries must include institutionName, degree, and year');
+          }
+        });
+
+        student.education = education;
+      } catch (error) {
+        throw new Error('Invalid education data format');
+      }
+    }
+
+    // Handle documents
+    if (files?.documents && files.documents.length > 0) {
+      const documentTypes = Array.isArray(data.documentTypes) 
+        ? data.documentTypes 
+        : [data.documentTypes];
+
+      if (documentTypes.length !== files.documents.length) {
+        throw new Error('Number of document types must match number of files');
+      }
+
+      const uploadedDocuments = await Promise.all(
+        files.documents.map(async (file: any, index: number) => {
+          const fileUrl = await uploadFileBufferToS3(
+            file.buffer,
+            file.originalname,
+            'students',
+            student._id.toString(),
+            file.mimetype,
+          );
+          return {
+            type: documentTypes[index],
+            fileUrl,
+            uploadedAt: new Date(),
+          };
+        }),
+      );
+      student.documents.push(...uploadedDocuments);
+    }
+
+    // Remove documents if specified
+    let removeDocuments: string[] = [];
+    if (data.removeDocuments) {
+      try {
+        // Handle both string and array formats
+        removeDocuments = typeof data.removeDocuments === 'string' 
+          ? JSON.parse(data.removeDocuments)
+          : data.removeDocuments;
+      } catch (error) {
+        console.error('Error parsing removeDocuments:', error);
+        throw new Error('Invalid removeDocuments format');
+      }
+    }
+
+    if (removeDocuments.length > 0) {
+      // Convert string IDs to ObjectIds for comparison
+      const removeIds = removeDocuments.map((id: string) => new mongoose.Types.ObjectId(id));
+      
+      // Update the documents array by filtering out the specified documents
+      await StudentModel.findByIdAndUpdate(
+        student._id,
+        {
+          $pull: {
+            documents: {
+              _id: { $in: removeIds }
+            }
+          }
+        },
+        { session }
+      );
+    }
+
+    // Update student basic details
+    const studentUpdates: Partial<IStudent> = {
+      firstName: data.firstName,
+      lastName: data.lastName,
+      gender: data.gender,
+      phone: data.phone,
+      passportNumber: data.passportNumber,
+      passportExpiry: data.passportExpiry,
+      profileStatus: data.profileStatus,
+    };
+
+    // Remove undefined values
+    Object.keys(studentUpdates).forEach((key) => {
+      if (studentUpdates[key as keyof typeof studentUpdates] === undefined) {
+        delete studentUpdates[key as keyof typeof studentUpdates];
+      }
+    });
+
+    Object.assign(student, studentUpdates);
+    await student.save({ session });
+
+    await session.commitTransaction();
+
+    // Fetch the updated student with populated user data
+    const updatedStudent = await StudentModel.findById(id)
+      .populate<{ user: IUser }>('user')
+      .lean();
+
+    if (!updatedStudent) {
+      throw new Error('Failed to fetch updated student data');
+    }
+
+    return updatedStudent;
+  } catch (error) {
+    await session.abortTransaction();
+    throw error;
+  } finally {
+    session.endSession();
+  }
 };
 
 export const deleteStudent = async (id: string) => {
@@ -175,7 +362,14 @@ export interface AdminStudentFilters {
  * Admin: list students with pagination and filters
  */
 export const listStudentsAdmin = async (filters: AdminStudentFilters = {}) => {
-  const { firstName, lastName, gender, page = 1, limit = 10, companyId } = filters;
+  const {
+    firstName,
+    lastName,
+    gender,
+    page = 1,
+    limit = 10,
+    companyId,
+  } = filters;
   const skip = (page - 1) * limit;
 
   const query: any = {};

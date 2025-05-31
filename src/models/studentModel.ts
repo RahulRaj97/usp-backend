@@ -18,8 +18,10 @@ export type DocumentType =
   | 'other';
 
 export interface IDocument {
+  _id?: mongoose.Types.ObjectId;
   type: DocumentType;
   fileUrl: string;
+  uploadedAt?: Date;
 }
 
 export interface IStudent extends Document {
@@ -90,10 +92,25 @@ const StudentSchema: Schema = new Schema(
 );
 
 StudentSchema.pre(/^find/, function (this: mongoose.Query<any, any>, next) {
-  this.populate(
-    'user',
-    'email role isActive address profileImage isEmailVerified',
-  );
+  this.populate({
+    path: 'user',
+    select: 'email role isActive address profileImage isEmailVerified',
+    transform: (doc) => {
+      if (doc && doc.address) {
+        return {
+          ...doc,
+          address: {
+            street: doc.address.street || '',
+            city: doc.address.city || '',
+            state: doc.address.state || '',
+            postalCode: doc.address.postalCode || '',
+            country: doc.address.country || '',
+          }
+        };
+      }
+      return doc;
+    }
+  });
   next();
 });
 
@@ -105,7 +122,17 @@ StudentSchema.set('toJSON', {
       ret.profileImage = ret.user.profileImage;
       ret.isActive = ret.user.isActive;
       ret.isEmailVerified = ret.user.isEmailVerified;
-      ret.address = ret.user.address;
+      
+      // Handle address from populated user
+      const userAddress = ret.user.address || {};
+      ret.address = {
+        street: userAddress.street || '',
+        city: userAddress.city || '',
+        state: userAddress.state || '',
+        postalCode: userAddress.postalCode || '',
+        country: userAddress.country || '',
+      };
+      
       delete ret.user;
     }
 

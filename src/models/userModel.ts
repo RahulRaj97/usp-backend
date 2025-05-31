@@ -25,12 +25,12 @@ export interface IUser extends Document {
 }
 
 const AddressSchema: Schema = new Schema({
-  street: { type: String },
-  city: { type: String },
-  state: { type: String },
-  postalCode: { type: String },
-  country: { type: String },
-});
+  street: { type: String, default: '' },
+  city: { type: String, default: '' },
+  state: { type: String, default: '' },
+  postalCode: { type: String, default: '' },
+  country: { type: String, default: '' },
+}, { _id: false });
 
 const UserSchema: Schema = new Schema(
   {
@@ -38,7 +38,7 @@ const UserSchema: Schema = new Schema(
     password: { type: String, required: true, select: false },
     role: { type: String, enum: ['student', 'admin', 'agent'], required: true },
     profileImage: { type: String },
-    address: { type: AddressSchema },
+    address: { type: AddressSchema, default: () => ({}) },
     isActive: { type: Boolean, default: true },
     isEmailVerified: { type: Boolean, default: false },
     refreshToken: { type: String, select: false },
@@ -69,5 +69,26 @@ UserSchema.methods.comparePassword = async function (
 ): Promise<boolean> {
   return await argon2.verify(this.password, candidatePassword);
 };
+
+UserSchema.set('toJSON', {
+  transform: (_, ret) => {
+    ret.id = ret._id;
+    delete ret._id;
+    delete ret.__v;
+    delete ret.password;
+    delete ret.refreshToken;
+    // Ensure address is properly transformed
+    if (ret.address) {
+      ret.address = {
+        street: ret.address.street || '',
+        city: ret.address.city || '',
+        state: ret.address.state || '',
+        postalCode: ret.address.postalCode || '',
+        country: ret.address.country || '',
+      };
+    }
+    return ret;
+  },
+});
 
 export default mongoose.model<IUser>('User', UserSchema);
