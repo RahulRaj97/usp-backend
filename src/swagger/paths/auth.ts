@@ -45,6 +45,46 @@ export const authPaths: OpenAPIV3.PathsObject = {
       },
     },
   },
+  '/api/auth/me': {
+    get: {
+      tags: ['Authentication'],
+      summary: 'Get current user details',
+      description: 'Retrieves the profile information of the currently authenticated user (admin, agent, or student).',
+      security: [{ BearerAuth: [] }],
+      responses: {
+        '200': {
+          description: 'Successfully retrieved user profile.',
+          content: {
+            'application/json': {
+              schema: {
+                oneOf: [
+                  { $ref: '#/components/schemas/Admin' },
+                  { $ref: '#/components/schemas/Agent' },
+                  { $ref: '#/components/schemas/UserResponse' },
+                ],
+              },
+            },
+          },
+        },
+        '401': {
+          description: 'Unauthorized. Invalid or missing token.',
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/ErrorResponse' },
+            },
+          },
+        },
+        '404': {
+          description: 'User not found.',
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/ErrorResponse' },
+            },
+          },
+        },
+      },
+    },
+  },
   '/api/auth/logout': {
     post: {
       tags: ['Authentication'],
