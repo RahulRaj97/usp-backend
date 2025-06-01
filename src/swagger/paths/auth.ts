@@ -58,9 +58,9 @@ export const authPaths: OpenAPIV3.PathsObject = {
             'application/json': {
               schema: {
                 oneOf: [
-                  { $ref: '#/components/schemas/AdminProfileResponse' },
-                  { $ref: '#/components/schemas/AgentProfileResponse' },
-                  { $ref: '#/components/schemas/UserResponse' },
+                  { $ref: '#/components/schemas/Admin' },
+                  { $ref: '#/components/schemas/Agent' },
+                  { $ref: '#/components/schemas/Student' },
                 ],
               },
             },
