@@ -5,7 +5,7 @@ import { generateAuthTokens } from '../services/userService';
 
 import { verifyRefreshToken } from '../utils/jwt';
 import { StatusCodes } from '../utils/httpStatuses';
-import { UnauthorizedError } from '../utils/appError';
+import { UnauthorizedError, NotFoundError } from '../utils/appError';
 import { getAgentByUserId } from '../services/agentService';
 import { getAdminByUserId } from '../services/adminService';
 
@@ -51,6 +51,43 @@ export const loginUser = async (
       accessToken,
       userProfile,
     });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Get User Details
+ */
+export const getUserDetails = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const { id: userId, role } = req.user || {};
+
+    if (!req.user || !userId) {
+      throw new UnauthorizedError('User not authenticated');
+    }
+
+    let userProfile: any = null;
+
+    if (role === 'admin') {
+      userProfile = await getAdminByUserId(userId);
+    } else if (role === 'agent') {
+      userProfile = await getAgentByUserId(userId);
+    } else {
+      userProfile = await UserModel.findById(userId).select(
+        '-password -refreshToken',
+      );
+    }
+
+    if (!userProfile) {
+      throw new NotFoundError('User not found');
+    }
+
+    res.status(StatusCodes.OK).json({ userProfile });
   } catch (error) {
     next(error);
   }
