@@ -14,6 +14,7 @@ import { adminUniversitySchemas } from './adminUniversitySchemas';
 import { searchSchemas } from './searchSchema';
 
 import { notificationSchemas } from './notificationSchemas';
+import { commonSchemas } from './commonSchemas';
 
 export const allSchemas = {
   // existing core schemas
@@ -35,4 +36,5 @@ export const allSchemas = {
 
   // notification schemas
   ...notificationSchemas,
+  ...commonSchemas,
 };
