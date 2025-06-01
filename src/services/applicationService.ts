@@ -11,6 +11,15 @@ import applicationModel, {
 import { NotFoundError, UnauthorizedError } from '../utils/appError';
 import { getAgentById } from './agentService';
 import { getUserById } from './userService';
+import adminModel, { AdminRole } from '../models/adminModel';
+import programmeModel from '../models/programmeModel';
+import companyModel from '../models/companyModel';
+import {
+  sendApplicationSubmittedToAgentAndOwnerEmail,
+  sendApplicationSubmittedToSuperAdminEmail
+} from './mailService';
+import userModel from '../models/userModel';
+
 
 export interface ApplicationFilters {
   page?: number;
@@ -106,6 +115,99 @@ export async function createApplication(
     submittedAt: new Date(),
     stageStatus: [],
   });
+
+  // Email Notification Logic - Start
+  try {
+    // The 'agent' variable is already fetched in createApplication: const agent = await getAgentById(agentId);
+    // It should have user details populated (email, firstName, lastName).
+
+    // 1. Submitting Agent's Details
+    const submittingAgentName = `${agent.firstName} ${agent.lastName}`;
+    const submittingAgentEmail = (agent.user as any)?.email;
+
+    // 2. Fetch Student's User Details
+    const studentUser = await userModel.findById(studentId).lean();
+    const studentName = studentUser ? `${studentUser.firstName} ${studentUser.lastName}` : 'Student Name N/A';
+
+    // 3. Fetch Company Owner(s) Emails
+    let companyOwnerEmails: string[] = [];
+    if (agent.companyId) {
+      const ownerAgents = await agentModel.find({ companyId: agent.companyId, level: 'owner' }).populate('user').lean();
+      companyOwnerEmails = ownerAgents
+        .map(owner => (owner.user as any)?.email)
+        .filter(email => !!email);
+    }
+
+    // 4. Fetch Super Admin Emails
+    const superAdmins = await adminModel.find({ role: AdminRole.SUPER_ADMIN }).populate('user').lean();
+    const superAdminEmails = superAdmins
+      .map(sa => (sa.user as any)?.email)
+      .filter(email => !!email);
+
+    // 5. Fetch Programme Details & Format for Email
+    const programmes = await programmeModel.find({ _id: { $in: app.programmeIds } }).populate('universityId').lean();
+    const programmesListHtml = programmes.map(p => {
+      const universityName = (p.universityId as any)?.name || 'University N/A';
+      return `<li>${p.name} (University: ${universityName})</li>`;
+    }).join('');
+    const programmesHtmlForEmail = `<ul>${programmesListHtml}</ul>`;
+
+    // 6. Fetch Company Details
+    let companyName = 'Company N/A';
+    if (agent.companyId) {
+      const company = await companyModel.findById(agent.companyId).lean();
+      if (company) {
+        companyName = company.name;
+      }
+    }
+
+    const submissionDateFormatted = app.submittedAt.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+
+    const agentAndOwnerRecipients = [...new Set([submittingAgentEmail, ...companyOwnerEmails].filter(email => !!email))] as string[];
+
+    if (agentAndOwnerRecipients.length > 0 && submittingAgentEmail) {
+      sendApplicationSubmittedToAgentAndOwnerEmail(
+        submittingAgentName,
+        agentAndOwnerRecipients,
+        app._id.toString(),
+        submissionDateFormatted,
+        studentName,
+        programmesHtmlForEmail
+      ).catch(err => console.error("Failed to send application email to agent/owner:", err));
+    } else if (!submittingAgentEmail) {
+      console.warn("Submitting agent email not found for agent/owner notification.");
+    }
+
+    if (superAdminEmails.length > 0 && submittingAgentEmail) {
+      sendApplicationSubmittedToSuperAdminEmail(
+        superAdminEmails,
+        submittingAgentName,
+        submittingAgentEmail,
+        companyName,
+        app._id.toString(),
+        submissionDateFormatted,
+        studentName,
+        programmesHtmlForEmail
+      ).catch(err => console.error("Failed to send application email to super admins:", err));
+    } else if (superAdminEmails.length > 0 && !submittingAgentEmail) {
+      console.warn("Submitting agent email not found for super admin notification (super admins will still be notified if company name is available).");
+      sendApplicationSubmittedToSuperAdminEmail( // Allow sending to superadmin even if agent email is missing for some reason
+        superAdminEmails,
+        submittingAgentName,
+        'Agent Email N/A',
+        companyName,
+        app._id.toString(),
+        submissionDateFormatted,
+        studentName,
+        programmesHtmlForEmail
+      ).catch(err => console.error("Failed to send application email to super admins (agent email missing):", err));
+    }
+
+  } catch (emailError) {
+    console.error('Error preparing or sending application submission emails:', emailError);
+  }
+  // Email Notification Logic - End
+
   return enrichOne(app._id.toString());
 }
 

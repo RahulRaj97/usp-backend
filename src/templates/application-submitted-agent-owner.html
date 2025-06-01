@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Application Submitted</title>
+    <style>
+        body { font-family: sans-serif; margin: 20px; color: #333; }
+        .container { padding: 20px; border: 1px solid #eee; border-radius: 5px; }
+        h1 { color: #0056b3; }
+        p { line-height: 1.6; }
+        strong { color: #0056b3; }
+        .footer { margin-top: 20px; font-size: 0.9em; color: #777; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Application Submitted to USP</h1>
+        <p>Hello {{AGENT_NAME}},</p>
+        <p>A new application has been successfully submitted through your account (or an account associated with your company).</p>
+
+        <h2>Application Details:</h2>
+        <p><strong>Application ID:</strong> {{APPLICATION_ID}}</p>
+        <p><strong>Submission Date:</strong> {{SUBMISSION_DATE}}</p>
+
+        <h2>Student Details:</h2>
+        <p><strong>Student Name:</strong> {{STUDENT_NAME}}</p>
+
+        <h2>Programme(s):</h2>
+        <p>{{PROGRAMMES_LIST}}</p>
+        <!-- Example for PROGRAMMES_LIST:
+             Programme Name 1 (University Name 1) <br>
+             Programme Name 2 (University Name 2)
+        -->
+
+        <p>You can view the application details in the USP portal.</p>
+        <!-- Optional: <p><a href="{{APPLICATION_LINK}}">View Application</a></p> -->
+
+        <div class="footer">
+            <p>Thank you for using Universal Study Portal.</p>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>New Application Submission Alert</title>
+    <style>
+        body { font-family: sans-serif; margin: 20px; color: #333; }
+        .container { padding: 20px; border: 1px solid #eee; border-radius: 5px; }
+        h1 { color: #0056b3; }
+        p { line-height: 1.6; }
+        strong { color: #0056b3; }
+        .footer { margin-top: 20px; font-size: 0.9em; color: #777; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>New Application Submitted</h1>
+        <p>Hello Super Admin,</p>
+        <p>A new application has been submitted on the Universal Study Portal.</p>
+
+        <h2>Submission Details:</h2>
+        <p><strong>Submitting Agent:</strong> {{SUBMITTING_AGENT_NAME}} ({{SUBMITTING_AGENT_EMAIL}})</p>
+        <p><strong>Submitting Company:</strong> {{SUBMITTING_COMPANY_NAME}}</p>
+
+        <h2>Application Details:</h2>
+        <p><strong>Application ID:</strong> {{APPLICATION_ID}}</p>
+        <p><strong>Submission Date:</strong> {{SUBMISSION_DATE}}</p>
+
+        <h2>Student Details:</h2>
+        <p><strong>Student Name:</strong> {{STUDENT_NAME}}</p>
+
+        <h2>Programme(s):</h2>
+        <p>{{PROGRAMMES_LIST}}</p>
+        <!-- Example for PROGRAMMES_LIST:
+             Programme Name 1 (University Name 1) <br>
+             Programme Name 2 (University Name 2)
+        -->
+
+        <p>You can view the application details in the USP admin portal.</p>
+        <!-- Optional: <p><a href="{{APPLICATION_LINK_ADMIN}}">View Application in Admin</a></p> -->
+
+        <div class="footer">
+            <p>Universal Study Portal Notification</p>
+        </div>
+    </div>
+</body>
+</html>
