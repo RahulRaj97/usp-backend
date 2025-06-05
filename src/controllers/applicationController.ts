@@ -9,6 +9,13 @@ import {
 } from '../services/applicationService';
 import { StatusCodes } from '../utils/httpStatuses';
 import { getAgentByUserId } from '../services/agentService';
+import { getStudentById } from '../services/studentService';
+import { getProgrammeByIdForAgent } from '../services/programmeService';
+import { getSuperAdmins } from '../services/userService';
+import {
+  sendNewApplicationEmailToAgent,
+  sendNewApplicationEmailToAdmin,
+} from '../services/mailService';
 import { uploadFileBufferToS3 } from '../services/s3UploadHelpter';
 
 /**
@@ -29,6 +36,44 @@ export const createApplicationController = async (
       programmeIds,
       priorityMapping,
     );
+
+    // Send email notifications
+    try {
+      const agentDetails = await getAgentByUserId(user.id);
+      const studentDetails = await getStudentById(studentId);
+      const programDetailsPromises = programmeIds.map((id: string) =>
+        getProgrammeByIdForAgent(id),
+      );
+      const programs = await Promise.all(programDetailsPromises);
+      const programSummary = programs
+        .map((p: any) => p.name)
+        .join(', ');
+
+      if (agentDetails && studentDetails) {
+        await sendNewApplicationEmailToAgent(
+          agentDetails.user.firstName, // Assuming agent name is on user object
+          agentDetails.user.email, // Assuming agent email is on user object
+          app.id,
+          `${studentDetails.firstName} ${studentDetails.lastName}`,
+          programSummary,
+        );
+
+        const superAdmins = await getSuperAdmins();
+        for (const admin of superAdmins) {
+          await sendNewApplicationEmailToAdmin(
+            admin.email,
+            app.id,
+            agentDetails.user.firstName,
+            `${studentDetails.firstName} ${studentDetails.lastName}`,
+            programSummary,
+          );
+        }
+      }
+    } catch (emailError) {
+      // Log the error but don't let it fail the main application creation
+      console.error('Failed to send application notification emails:', emailError);
+    }
+
     res.status(StatusCodes.CREATED).json(app);
   } catch (err) {
     next(err);

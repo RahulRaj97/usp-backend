@@ -7,9 +7,13 @@ dotenv.config();
 
 const otpTemplatePath = path.join(__dirname, '../templates/otp-template.html');
 const subagentTemplatePath = path.join(__dirname, '../templates/subagent-verification-template.html');
+const newApplicationAgentTemplatePath = path.join(__dirname, '../templates/new-application-agent-template.html');
+const newApplicationAdminTemplatePath = path.join(__dirname, '../templates/new-application-admin-template.html');
 
 let otpTemplate = fs.readFileSync(otpTemplatePath, 'utf-8');
 let subagentTemplate = fs.readFileSync(subagentTemplatePath, 'utf-8');
+let newApplicationAgentTemplate = fs.readFileSync(newApplicationAgentTemplatePath, 'utf-8');
+let newApplicationAdminTemplate = fs.readFileSync(newApplicationAdminTemplatePath, 'utf-8');
 
 const transporter = nodemailer.createTransport({
   host: process.env.SMTP_HOST,
@@ -45,6 +49,60 @@ export const sendOTPEmail = async (
     html,
   };
   await transporter.sendMail(mailOptions);
+};
+
+export const sendNewApplicationEmailToAgent = async (
+  agentName: string,
+  agentEmail: string,
+  applicationId: string,
+  studentName: string,
+  programDetails: string,
+) => {
+  try {
+    const html = newApplicationAgentTemplate
+      .replace(/{{AGENT_NAME}}/g, agentName)
+      .replace(/{{APPLICATION_ID}}/g, applicationId)
+      .replace(/{{STUDENT_NAME}}/g, studentName)
+      .replace(/{{PROGRAM_DETAILS}}/g, programDetails);
+
+    const mailOptions = {
+      from: `"USP Admissions" <${process.env.SMTP_USER}>`,
+      to: agentEmail,
+      subject: 'New Application Submitted',
+      html,
+    };
+    await transporter.sendMail(mailOptions);
+  } catch (error) {
+    console.error('Error sending new application email to agent:', error);
+    throw error;
+  }
+};
+
+export const sendNewApplicationEmailToAdmin = async (
+  adminEmail: string,
+  applicationId: string,
+  agentName: string,
+  studentName: string,
+  programDetails: string,
+) => {
+  try {
+    const html = newApplicationAdminTemplate
+      .replace(/{{APPLICATION_ID}}/g, applicationId)
+      .replace(/{{AGENT_NAME}}/g, agentName)
+      .replace(/{{STUDENT_NAME}}/g, studentName)
+      .replace(/{{PROGRAM_DETAILS}}/g, programDetails);
+
+    const mailOptions = {
+      from: `"USP Admissions" <${process.env.SMTP_USER}>`,
+      to: adminEmail,
+      subject: 'New Application Received',
+      html,
+    };
+    await transporter.sendMail(mailOptions);
+  } catch (error) {
+    console.error('Error sending new application email to admin:', error);
+    throw error;
+  }
 };
 
 export const sendSubagentVerificationEmail = async (
