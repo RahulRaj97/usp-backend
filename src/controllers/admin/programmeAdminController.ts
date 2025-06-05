@@ -50,11 +50,11 @@ export const listProgrammesAdminController = async (
         : undefined,
       published:
         req.query.published == null ? undefined : req.query.published === true,
-      country: Array.isArray(req.query.country) 
-        ? req.query.country as string[] 
-        : req.query.country 
-          ? [req.query.country as string] 
-          : undefined,
+      country: req.query.country 
+        ? (Array.isArray(req.query.country) 
+            ? req.query.country 
+            : [req.query.country]).map(c => String(c))
+        : undefined,
       intakeDateFrom: req.query.intakeDateFrom 
         ? new Date(String(req.query.intakeDateFrom))
         : undefined,
