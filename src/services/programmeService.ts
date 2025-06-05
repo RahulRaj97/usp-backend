@@ -29,6 +29,9 @@ export interface AgentProgrammeFilters {
 
 export interface AdminProgrammeFilters extends AgentProgrammeFilters {
   published?: boolean;
+  country?: string[]; // Add country filter
+  intakeDateFrom?: Date; // Add intake date range filters
+  intakeDateTo?: Date;
 }
 
 export interface AdminCreateProgrammeDto {
@@ -314,7 +317,7 @@ export async function listProgrammesAdmin(filters: AdminProgrammeFilters) {
     const re = new RegExp(filters.search, 'i');
     query.$or = [{ name: re }, { lengthBreakdown: re }];
   }
-  // if (filters.universityId) query.universityId = filters.universityId;
+  if (filters.universityId) query.universityId = filters.universityId;
   if (filters.type) query.type = filters.type;
   if (filters.deliveryMethod) query.deliveryMethod = filters.deliveryMethod;
   if (filters.minTuition != null || filters.maxTuition != null) {
@@ -332,19 +335,75 @@ export async function listProgrammesAdmin(filters: AdminProgrammeFilters) {
       $lte: filters.maxApplicationFee,
     };
   }
-  if (filters.openIntakeOnly) {
-    query.intakes = { $elemMatch: { status: 'open' } };
+
+  // Add intake date range filters
+  if (filters.intakeDateFrom || filters.intakeDateTo) {
+    const dateQuery: any = {};
+    if (filters.intakeDateFrom) dateQuery.$gte = filters.intakeDateFrom;
+    if (filters.intakeDateTo) dateQuery.$lte = filters.intakeDateTo;
+    query.intakes = {
+      ...(query.intakes || {}),
+      $elemMatch: { openDate: dateQuery },
+    };
   }
 
-  const [docs, total] = await Promise.all([
-    programmeModel
-      .find(query)
-      .skip(skip)
-      .limit(limit)
-      .sort({ name: 1 })
-      .populate('universityId', 'name logo website'),
-    programmeModel.countDocuments(query),
+  // If no country filter, we can just use find()
+  if (!filters.country) {
+    const [docs, total] = await Promise.all([
+      programmeModel
+        .find(query)
+        .skip(skip)
+        .limit(limit)
+        .sort({ name: 1 })
+        .populate('universityId', 'name logo website'),
+      programmeModel.countDocuments(query),
+    ]);
+
+    return {
+      programmes: await Promise.all(docs.map((d) => projectProgramme(d))),
+      totalPages: Math.ceil(total / limit),
+      currentPage: page,
+    };
+  }
+
+  // If country filter is present, use aggregation pipeline
+  const pipeline: any[] = [
+    { $match: query },
+    {
+      $lookup: {
+        from: 'universities',
+        localField: 'universityId',
+        foreignField: '_id',
+        as: 'university',
+      },
+    },
+    { $unwind: '$university' },
+    {
+      $match: {
+        'university.address.country': { $in: filters.country },
+      },
+    },
+  ];
+
+  // Add pagination and sorting
+  pipeline.push(
+    { $sort: { name: 1 } },
+    { $skip: skip },
+    { $limit: limit },
+  );
+
+  // Get total count
+  const countPipeline = [
+    ...pipeline.slice(0, -3), // Remove pagination stages
+    { $count: 'count' },
+  ];
+
+  const [docs, countResult] = await Promise.all([
+    programmeModel.aggregate(pipeline),
+    programmeModel.aggregate(countPipeline),
   ]);
+
+  const total = countResult[0]?.count ?? 0;
 
   return {
     programmes: await Promise.all(docs.map((d) => projectProgramme(d))),

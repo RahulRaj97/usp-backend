@@ -33,10 +33,9 @@ export const listProgrammesAdminController = async (
       page: parseInt(req.query.page as any) || 1,
       limit: parseInt(req.query.limit as any) || 20,
       search: req.query.search as string | undefined,
-      // universityId: req.query.universityId as string | undefined,
+      universityId: req.query.universityId as string | undefined,
       type: req.query.type as any,
       deliveryMethod: req.query.deliveryMethod as any,
-      openIntakeOnly: req.query.openIntakeOnly === true,
       minTuition: req.query.minTuition
         ? Number(req.query.minTuition)
         : undefined,
@@ -51,6 +50,17 @@ export const listProgrammesAdminController = async (
         : undefined,
       published:
         req.query.published == null ? undefined : req.query.published === true,
+      country: Array.isArray(req.query.country) 
+        ? req.query.country as string[] 
+        : req.query.country 
+          ? [req.query.country as string] 
+          : undefined,
+      intakeDateFrom: req.query.intakeDateFrom 
+        ? new Date(String(req.query.intakeDateFrom))
+        : undefined,
+      intakeDateTo: req.query.intakeDateTo
+        ? new Date(String(req.query.intakeDateTo))
+        : undefined,
     };
     const result = await listProgrammesAdmin(filters);
     res.status(StatusCodes.OK).json(result);

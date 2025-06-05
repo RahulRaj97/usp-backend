@@ -20,7 +20,33 @@ export const adminProgrammePaths: OpenAPIV3.PathsObject = {
           in: 'query',
           schema: { $ref: '#/components/schemas/DeliveryMethod' },
         },
-        { name: 'openIntakeOnly', in: 'query', schema: { type: 'boolean' } },
+        { 
+          name: 'country', 
+          in: 'query', 
+          schema: { 
+            type: 'array',
+            items: { type: 'string' }
+          },
+          description: 'Filter by university country. Can be provided multiple times for multiple countries.'
+        },
+        { 
+          name: 'intakeDateFrom', 
+          in: 'query', 
+          schema: { 
+            type: 'string',
+            format: 'date'
+          },
+          description: 'Filter intakes starting from this date (inclusive)'
+        },
+        { 
+          name: 'intakeDateTo', 
+          in: 'query', 
+          schema: { 
+            type: 'string',
+            format: 'date'
+          },
+          description: 'Filter intakes starting until this date (inclusive)'
+        },
         { name: 'minTuition', in: 'query', schema: { type: 'number' } },
         { name: 'maxTuition', in: 'query', schema: { type: 'number' } },
         { name: 'minApplicationFee', in: 'query', schema: { type: 'number' } },
