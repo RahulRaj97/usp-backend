@@ -196,8 +196,18 @@ export async function listProgrammesForAgent(filters: AgentProgrammeFilters) {
 
   if (filters.intakeDateFrom || filters.intakeDateTo) {
     const dateQuery: any = {};
-    if (filters.intakeDateFrom) dateQuery.$gte = filters.intakeDateFrom;
-    if (filters.intakeDateTo) dateQuery.$lte = filters.intakeDateTo;
+    if (filters.intakeDateFrom) {
+      // Set time to start of day
+      const fromDate = new Date(filters.intakeDateFrom);
+      fromDate.setHours(0, 0, 0, 0);
+      dateQuery.$gte = fromDate;
+    }
+    if (filters.intakeDateTo) {
+      // Set time to end of day
+      const toDate = new Date(filters.intakeDateTo);
+      toDate.setHours(23, 59, 59, 999);
+      dateQuery.$lte = toDate;
+    }
     match.intakes = {
       ...(match.intakes || {}),
       $elemMatch: { openDate: dateQuery },
@@ -342,8 +352,18 @@ export async function listProgrammesAdmin(filters: AdminProgrammeFilters) {
   // Add intake date range filters
   if (filters.intakeDateFrom || filters.intakeDateTo) {
     const dateQuery: any = {};
-    if (filters.intakeDateFrom) dateQuery.$gte = filters.intakeDateFrom;
-    if (filters.intakeDateTo) dateQuery.$lte = filters.intakeDateTo;
+    if (filters.intakeDateFrom) {
+      // Set time to start of day
+      const fromDate = new Date(filters.intakeDateFrom);
+      fromDate.setHours(0, 0, 0, 0);
+      dateQuery.$gte = fromDate;
+    }
+    if (filters.intakeDateTo) {
+      // Set time to end of day
+      const toDate = new Date(filters.intakeDateTo);
+      toDate.setHours(23, 59, 59, 999);
+      dateQuery.$lte = toDate;
+    }
     query.intakes = {
       ...(query.intakes || {}),
       $elemMatch: { openDate: dateQuery },
