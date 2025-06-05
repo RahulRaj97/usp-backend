@@ -350,6 +350,27 @@ export async function listProgrammesAdmin(filters: AdminProgrammeFilters) {
     };
   }
 
+  // If no country filter, we can just use find()
+  if (!filters.country) {
+    console.log('Using find() with query:', JSON.stringify(query, null, 2));
+    const [docs, total] = await Promise.all([
+      programmeModel
+        .find(query)
+        .skip(skip)
+        .limit(limit)
+        .sort({ name: 1 })
+        .populate('universityId', 'name logo website'),
+      programmeModel.countDocuments(query),
+    ]);
+    console.log('Found documents:', docs.length, 'Total:', total);
+
+    return {
+      programmes: await Promise.all(docs.map((d) => projectProgramme(d))),
+      totalPages: Math.ceil(total / limit),
+      currentPage: page,
+    };
+  }
+
   // If country filter is present, use aggregation pipeline
   const pipeline: any[] = [
     { $match: query },
