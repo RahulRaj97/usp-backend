@@ -6,22 +6,21 @@
     <title>USP Admissions</title>
   </head>
 
-  <body style="font-family: 'Inter', sans-serif; margin: 0; padding: 0">
+  <body style="font-family: 'Inter', sans-serif; margin: 0; padding: 0; background-color: #f8f7fe;">
     <table
       role="presentation"
       cellspacing="0"
       cellpadding="0"
       border="0"
       style="
-        background-color: #f8f7fe;
         width: 100%;
         max-width: 950px;
         margin: 0 auto;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        padding: 20px;
       "
     >
       <tr>
-        <td align="center" style="padding: 30px">
+        <td align="center" style="padding: 20px">
           <table
             role="presentation"
             width="100%"
@@ -29,104 +28,115 @@
             cellspacing="0"
             cellpadding="0"
             border="0"
-            style="background-color: #fff; padding: 30px; border-radius: 10px"
+            style="background-color: #fff; padding: 40px; border-radius: 16px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);"
           >
             <tr>
-              <td align="center" style="padding: 0 0 20px 0">
+              <td align="center" style="padding: 0 0 30px 0">
                 <img
                   src="https://designmojo.com.au/wp-content/uploads/2025/03/Group-1.png"
                   alt="Logo"
-                  style="max-width: 150px"
+                  style="max-width: 180px"
                 />
               </td>
             </tr>
             <tr>
               <td
                 style="
-                  padding: 20px;
+                  padding: 30px;
                   background-color: #f8f7fe;
-                  border-radius: 10px;
-                  box-shadow: 0px 0px 8px 0px rgba(0, 0, 0, 0.1);
+                  border-radius: 12px;
+                  box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.05);
                 "
               >
                 <h3
                   style="
-                    font-size: 17px;
+                    font-size: 20px;
                     font-weight: 600;
                     color: #212121;
-                    border-bottom: 1px solid rgba(112, 101, 239, 0.1);
+                    margin: 0 0 20px 0;
                     padding-bottom: 15px;
+                    border-bottom: 2px solid rgba(112, 101, 239, 0.2);
                   "
                 >
                   Hello {{AGENT_NAME}}
                 </h3>
-                <p style="color: #212121; font-size: 17px; font-weight: normal">
-                  A new application has been submitted by you.
+                <p style="color: #212121; font-size: 16px; font-weight: 500; margin: 0 0 15px 0;">
+                  A new application has been submitted successfully.
                 </p>
-                <p style="color: #212121; font-size: 17px; font-weight: normal">
-                  Application ID: {{APPLICATION_ID}}
-                </p>
-                <p style="color: #212121; font-size: 17px; font-weight: normal">
-                  Student Name: {{STUDENT_NAME}}
-                </p>
-                <p style="color: #212121; font-size: 17px; font-weight: normal">
-                  Program Details: {{PROGRAM_DETAILS}}
-                </p>
-                <!-- Add other relevant application details here -->
+                <div style="background-color: #fff; padding: 20px; border-radius: 8px; margin: 20px 0;">
+                  <h4 style="color: #3a4069; font-size: 16px; margin: 0 0 15px 0;">Application Details</h4>
+                  <p style="color: #212121; font-size: 15px; margin: 8px 0;">
+                    <strong>Application ID:</strong> {{APPLICATION_ID}}
+                  </p>
+                  <p style="color: #212121; font-size: 15px; margin: 8px 0;">
+                    <strong>Student Name:</strong> {{STUDENT_NAME}}
+                  </p>
+                </div>
+                <div style="background-color: #fff; padding: 20px; border-radius: 8px;">
+                  <h4 style="color: #3a4069; font-size: 16px; margin: 0 0 15px 0;">Program Details</h4>
+                  {{PROGRAM_DETAILS}}
+                </div>
               </td>
             </tr>
             <tr>
-              <td align="center" style="padding-top: 20px">
-                <a
-                  href="#"
-                  style="
-                    text-decoration: none;
-                    color: #3a4069;
-                    font-size: 12px;
-                    margin: 0 10px;
-                  "
-                  >Blogs</a
-                >
-                <a
-                  href="#"
-                  style="
-                    text-decoration: none;
-                    color: #3a4069;
-                    font-size: 12px;
-                    margin: 0 10px;
-                  "
-                  >Events</a
-                >
-                <a
-                  href="#"
-                  style="
-                    text-decoration: none;
-                    color: #3a4069;
-                    font-size: 12px;
-                    margin: 0 10px;
-                  "
-                  >Contact Us</a
-                >
-                <a
-                  href="#"
-                  style="
-                    text-decoration: none;
-                    color: #3a4069;
-                    font-size: 12px;
-                    margin: 0 10px;
-                  "
-                  >Terms & Conditions</a
-                >
-                <a
-                  href="#"
-                  style="
-                    text-decoration: none;
-                    color: #3a4069;
-                    font-size: 12px;
-                    margin: 0 10px;
-                  "
-                  >Self Training</a
-                >
+              <td align="center" style="padding-top: 30px">
+                <div style="border-top: 1px solid #e5e5e5; padding-top: 20px;">
+                  <a
+                    href="#"
+                    style="
+                      text-decoration: none;
+                      color: #3a4069;
+                      font-size: 13px;
+                      margin: 0 12px;
+                      font-weight: 500;
+                    "
+                    >Blogs</a
+                  >
+                  <a
+                    href="#"
+                    style="
+                      text-decoration: none;
+                      color: #3a4069;
+                      font-size: 13px;
+                      margin: 0 12px;
+                      font-weight: 500;
+                    "
+                    >Events</a
+                  >
+                  <a
+                    href="#"
+                    style="
+                      text-decoration: none;
+                      color: #3a4069;
+                      font-size: 13px;
+                      margin: 0 12px;
+                      font-weight: 500;
+                    "
+                    >Contact Us</a
+                  >
+                  <a
+                    href="#"
+                    style="
+                      text-decoration: none;
+                      color: #3a4069;
+                      font-size: 13px;
+                      margin: 0 12px;
+                      font-weight: 500;
+                    "
+                    >Terms & Conditions</a
+                  >
+                  <a
+                    href="#"
+                    style="
+                      text-decoration: none;
+                      color: #3a4069;
+                      font-size: 13px;
+                      margin: 0 12px;
+                      font-weight: 500;
+                    "
+                    >Self Training</a
+                  >
+                </div>
               </td>
             </tr>
           </table>

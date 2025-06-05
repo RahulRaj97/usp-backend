@@ -51,8 +51,3 @@ export const generateAuthTokens = async (user: IUser) => {
   await UserModel.findByIdAndUpdate(user.id, { refreshToken });
   return { accessToken, refreshToken };
 };
-
-export const getSuperAdmins = async (): Promise<IUser[]> => {
-  const superAdmins = await UserModel.find({ role: 'super_admin' });
-  return superAdmins;
-};

@@ -11,12 +11,14 @@ import { StatusCodes } from '../utils/httpStatuses';
 import { getAgentByUserId } from '../services/agentService';
 import { getStudentById } from '../services/studentService';
 import { getProgrammeByIdForAgent } from '../services/programmeService';
-import { getSuperAdmins } from '../services/userService';
+import { getUserById } from '../services/userService';
+import { getSuperAdmins } from '../services/adminService';
 import {
   sendNewApplicationEmailToAgent,
   sendNewApplicationEmailToAdmin,
 } from '../services/mailService';
 import { uploadFileBufferToS3 } from '../services/s3UploadHelpter';
+import companyModel from '../models/companyModel';
 
 /**
  * Agent: submit a new application
@@ -36,8 +38,6 @@ export const createApplicationController = async (
       programmeIds,
       priorityMapping,
     );
-
-    // Send email notifications
     try {
       const agentDetails = await getAgentByUserId(user.id);
       const studentDetails = await getStudentById(studentId);
@@ -45,27 +45,42 @@ export const createApplicationController = async (
         getProgrammeByIdForAgent(id),
       );
       const programs = await Promise.all(programDetailsPromises);
-      const programSummary = programs
-        .map((p: any) => p.name)
-        .join(', ');
+      
+      // Format program properties for email
+      const programProperties = programs.map((p: any) => {
+        // Find the original program ID from programmeIds array
+        const originalId = programmeIds.find((id: string) => id === p.id);
+        return {
+          name: p.name,
+          university: p.university?.name || 'Not specified',
+          priority: originalId ? priorityMapping[originalId] || 1 : 1,
+        };
+      });
 
+      const agentUser = await getUserById(user.id);
       if (agentDetails && studentDetails) {
         await sendNewApplicationEmailToAgent(
-          agentDetails.user.firstName, // Assuming agent name is on user object
-          agentDetails.user.email, // Assuming agent email is on user object
-          app.id,
+          agent.firstName,
+          agentUser.email,
+          app.applicationCode,
           `${studentDetails.firstName} ${studentDetails.lastName}`,
-          programSummary,
+          programProperties,
         );
+
+        // Fetch company details
+        const company = await companyModel.findById(agentDetails.companyId);
+        const companyName = company?.name || 'Not specified';
 
         const superAdmins = await getSuperAdmins();
         for (const admin of superAdmins) {
           await sendNewApplicationEmailToAdmin(
-            admin.email,
-            app.id,
-            agentDetails.user.firstName,
+            (admin.user as any).email,
+            app.applicationCode,
+            agentDetails.firstName,
             `${studentDetails.firstName} ${studentDetails.lastName}`,
-            programSummary,
+            programProperties,
+            companyName,
+            agentUser.email,
           );
         }
       }

@@ -28,6 +28,13 @@ export const getAdminById = async (id: string): Promise<IAdmin> => {
   return admin;
 };
 
+export const getSuperAdmins = async () => {
+  const superAdmins = await AdminModel.find({ role: 'super_admin' })
+    .populate('user', 'email')
+    .lean();
+  return superAdmins;
+};
+
 /**
  * Get an Admin record by the linked User ID
  */

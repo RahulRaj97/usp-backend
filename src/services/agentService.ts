@@ -305,7 +305,9 @@ export const getAgentById = async (id: string) => {
  * Get an Agent by User ID
  */
 export const getAgentByUserId = async (userId: string) => {
-  const agent = await AgentModel.findOne({ user: userId }).lean();
+  const agent = await AgentModel.findOne({ user: userId })
+    .populate('companyId', 'name')
+    .lean();
   if (!agent) throw new NotFoundError('Agent not found');
   return agent;
 };

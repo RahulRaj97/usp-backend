@@ -56,14 +56,31 @@ export const sendNewApplicationEmailToAgent = async (
   agentEmail: string,
   applicationId: string,
   studentName: string,
-  programDetails: string,
+  programProperties: {
+    name: string;
+    university: string;
+    priority: number;
+  }[],
 ) => {
   try {
+    const programDetailsHtml = programProperties
+      .sort((a, b) => a.priority - b.priority)
+      .map((prop, index) => `
+        <div style="margin-bottom: ${index < programProperties.length - 1 ? '20px' : '0'}; padding-bottom: ${index < programProperties.length - 1 ? '20px' : '0'}; border-bottom: ${index < programProperties.length - 1 ? '1px solid #e5e5e5' : 'none'};">
+          <p style="color: #212121; font-size: 15px; margin: 8px 0;">
+            <strong>Program ${index + 1}:</strong> ${prop.name}
+          </p>
+          <p style="color: #666; font-size: 14px; margin: 4px 0 0 20px;">
+            University: ${prop.university}
+          </p>
+        </div>
+      `).join('');
+
     const html = newApplicationAgentTemplate
       .replace(/{{AGENT_NAME}}/g, agentName)
       .replace(/{{APPLICATION_ID}}/g, applicationId)
       .replace(/{{STUDENT_NAME}}/g, studentName)
-      .replace(/{{PROGRAM_DETAILS}}/g, programDetails);
+      .replace(/{{PROGRAM_DETAILS}}/g, programDetailsHtml);
 
     const mailOptions = {
       from: `"USP Admissions" <${process.env.SMTP_USER}>`,
@@ -83,14 +100,35 @@ export const sendNewApplicationEmailToAdmin = async (
   applicationId: string,
   agentName: string,
   studentName: string,
-  programDetails: string,
+  programProperties: {
+    name: string;
+    university: string;
+    priority: number;
+  }[],
+  companyName: string,
+  agentEmail: string,
 ) => {
   try {
+    const programDetailsHtml = programProperties
+      .sort((a, b) => a.priority - b.priority)
+      .map((prop, index) => `
+        <div style="margin-bottom: ${index < programProperties.length - 1 ? '20px' : '0'}; padding-bottom: ${index < programProperties.length - 1 ? '20px' : '0'}; border-bottom: ${index < programProperties.length - 1 ? '1px solid #e5e5e5' : 'none'};">
+          <p style="color: #212121; font-size: 15px; margin: 8px 0;">
+            <strong>Program ${index + 1}:</strong> ${prop.name}
+          </p>
+          <p style="color: #666; font-size: 14px; margin: 4px 0 0 20px;">
+            University: ${prop.university}
+          </p>
+        </div>
+      `).join('');
+
     const html = newApplicationAdminTemplate
       .replace(/{{APPLICATION_ID}}/g, applicationId)
       .replace(/{{AGENT_NAME}}/g, agentName)
       .replace(/{{STUDENT_NAME}}/g, studentName)
-      .replace(/{{PROGRAM_DETAILS}}/g, programDetails);
+      .replace(/{{PROGRAM_DETAILS}}/g, programDetailsHtml)
+      .replace(/{{COMPANY_NAME}}/g, companyName)
+      .replace(/{{AGENT_EMAIL}}/g, agentEmail);
 
     const mailOptions = {
       from: `"USP Admissions" <${process.env.SMTP_USER}>`,
