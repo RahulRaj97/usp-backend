@@ -107,12 +107,15 @@ async function projectProgramme(doc: IProgramme & { universityId: any }) {
   const uni = doc.universityId?.toObject
     ? doc.universityId.toObject()
     : doc.universityId;
-  uni.id = uni._id.toString();
+  
+  // Convert ObjectId to string
+  uni.id = uni._id?.toString() || uni._id;
   delete uni._id;
   delete uni.__v;
+  
   const o = doc.toObject ? doc.toObject() : doc;
   return {
-    id: o._id.toString(),
+    id: o._id?.toString() || o._id,
     university: uni,
     name: o.name,
     type: o.type,
