@@ -321,8 +321,8 @@ export async function listProgrammesAdmin(filters: AdminProgrammeFilters) {
     query.$or = [{ name: re }, { lengthBreakdown: re }];
   }
   if (filters.universityId) query.universityId = filters.universityId;
-  if (filters.type) query.type = filters.type;
-  if (filters.deliveryMethod) query.deliveryMethod = filters.deliveryMethod;
+  if (filters.type) query.type = Array.isArray(filters.type) ? { $in: filters.type } : filters.type;
+  if (filters.deliveryMethod) query.deliveryMethod = Array.isArray(filters.deliveryMethod) ? { $in: filters.deliveryMethod } : filters.deliveryMethod;
   if (filters.minTuition != null || filters.maxTuition != null) {
     query.tuitionFee = {
       ...(filters.minTuition != null ? { $gte: filters.minTuition } : {}),
@@ -364,7 +364,7 @@ export async function listProgrammesAdmin(filters: AdminProgrammeFilters) {
     { $unwind: '$university' },
     {
       $match: {
-        'university.address.country': { $in: filters.country },
+        'university.address.country': { $in: Array.isArray(filters.country) ? filters.country : [filters.country] },
       },
     },
     // Add pagination and sorting
