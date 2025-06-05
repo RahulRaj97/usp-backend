@@ -140,9 +140,9 @@ export const programmeSchemas: { [key: string]: OpenAPIV3.SchemaObject } = {
 
   CreateProgrammePayload: {
     type: 'object',
-    required: ['universityId', 'name', 'type', 'lengthBreakdown'],
+    required: ['universityId', 'name', 'type'],
     properties: {
-      university: { $ref: '#/components/schemas/University' },
+      universityId: { type: 'string', description: 'ID of the university this programme belongs to' },
       name: { type: 'string' },
       description: { type: 'string' },
       type: { $ref: '#/components/schemas/ProgrammeType' },
