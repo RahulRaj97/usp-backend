@@ -350,25 +350,6 @@ export async function listProgrammesAdmin(filters: AdminProgrammeFilters) {
     };
   }
 
-  // If no country filter, we can just use find()
-  if (!filters.country) {
-    const [docs, total] = await Promise.all([
-      programmeModel
-        .find(query)
-        .skip(skip)
-        .limit(limit)
-        .sort({ name: 1 })
-        .populate('universityId', 'name logo website'),
-      programmeModel.countDocuments(query),
-    ]);
-
-    return {
-      programmes: await Promise.all(docs.map((d) => projectProgramme(d))),
-      totalPages: Math.ceil(total / limit),
-      currentPage: page,
-    };
-  }
-
   // If country filter is present, use aggregation pipeline
   const pipeline: any[] = [
     { $match: query },
@@ -386,18 +367,47 @@ export async function listProgrammesAdmin(filters: AdminProgrammeFilters) {
         'university.address.country': { $in: filters.country },
       },
     },
-  ];
-
-  // Add pagination and sorting
-  pipeline.push(
+    // Add pagination and sorting
     { $sort: { name: 1 } },
     { $skip: skip },
     { $limit: limit },
-  );
+    // Project fields and convert ObjectIds to strings
+    {
+      $project: {
+        _id: { $toString: '$_id' },
+        university: {
+          _id: { $toString: '$university._id' },
+          name: '$university.name',
+          logo: '$university.logo',
+          website: '$university.website',
+          address: '$university.address'
+        },
+        name: 1,
+        type: 1,
+        description: 1,
+        lengthBreakdown: 1,
+        deliveryMethod: 1,
+        tuitionFee: 1,
+        applicationFee: 1,
+        otherFees: 1,
+        published: 1,
+        metaTitle: 1,
+        metaDescription: 1,
+        metaKeywords: 1,
+        intakes: 1,
+        programRequirement: 1,
+        modules: 1,
+        services: 1,
+        images: 1,
+        createdAt: 1,
+        updatedAt: 1
+      }
+    }
+  ];
 
   // Get total count
   const countPipeline = [
-    ...pipeline.slice(0, -3), // Remove pagination stages
+    ...pipeline.slice(0, -4), // Remove pagination and projection stages
     { $count: 'count' },
   ];
 
@@ -408,8 +418,31 @@ export async function listProgrammesAdmin(filters: AdminProgrammeFilters) {
 
   const total = countResult[0]?.count ?? 0;
 
+  // No need to call projectProgramme since we've already formatted the data
   return {
-    programmes: await Promise.all(docs.map((d) => projectProgramme(d))),
+    programmes: docs.map(doc => ({
+      id: doc._id,
+      university: doc.university,
+      name: doc.name,
+      type: doc.type,
+      description: doc.description,
+      lengthBreakdown: doc.lengthBreakdown,
+      deliveryMethod: doc.deliveryMethod,
+      tuitionFee: doc.tuitionFee,
+      applicationFee: doc.applicationFee,
+      otherFees: doc.otherFees,
+      published: doc.published,
+      metaTitle: doc.metaTitle,
+      metaDescription: doc.metaDescription,
+      metaKeywords: doc.metaKeywords,
+      intakes: doc.intakes,
+      programRequirement: doc.programRequirement,
+      modules: doc.modules,
+      services: doc.services,
+      images: doc.images,
+      createdAt: doc.createdAt,
+      updatedAt: doc.updatedAt
+    })),
     totalPages: Math.ceil(total / limit),
     currentPage: page,
   };
