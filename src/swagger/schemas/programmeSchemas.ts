@@ -203,7 +203,79 @@ export const programmeSchemas: { [key: string]: OpenAPIV3.SchemaObject } = {
         items: { type: 'string', format: 'binary' },
         description: 'One or more image files',
       },
-    },
+      imageOperations: {
+        type: 'object',
+        properties: {
+          remove: {
+            type: 'array',
+            items: { type: 'string' },
+            description: 'Array of image URLs to remove'
+          },
+          reorder: {
+            type: 'array',
+            items: { type: 'string' },
+            description: 'Array of image URLs in desired order'
+          }
+        }
+      },
+      arrayOperations: {
+        type: 'object',
+        properties: {
+          otherFees: {
+            type: 'object',
+            properties: {
+              remove: { type: 'array', items: { type: 'string' } },
+              add: { type: 'array', items: { type: 'string' } }
+            }
+          },
+          metaKeywords: {
+            type: 'object',
+            properties: {
+              remove: { type: 'array', items: { type: 'string' } },
+              add: { type: 'array', items: { type: 'string' } }
+            }
+          },
+          modules: {
+            type: 'object',
+            properties: {
+              remove: { type: 'array', items: { type: 'string' } },
+              add: { type: 'array', items: { type: 'string' } }
+            }
+          },
+          services: {
+            type: 'object',
+            properties: {
+              remove: { type: 'array', items: { type: 'string' } },
+              add: { type: 'array', items: { type: 'string' } }
+            }
+          }
+        }
+      },
+      intakeOperations: {
+        type: 'object',
+        properties: {
+          remove: {
+            type: 'array',
+            items: { type: 'number' },
+            description: 'Array of intake indices to remove'
+          },
+          update: {
+            type: 'array',
+            items: {
+              type: 'object',
+              properties: {
+                index: { type: 'number', description: 'Index of the intake to update' },
+                updates: { $ref: '#/components/schemas/ProgramIntake' }
+              }
+            }
+          },
+          add: {
+            type: 'array',
+            items: { $ref: '#/components/schemas/ProgramIntake' }
+          }
+        }
+      }
+    }
   },
 
   PaginatedProgrammes: {

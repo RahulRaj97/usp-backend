@@ -379,12 +379,26 @@ export const listStudentsAdmin = async (filters: AdminStudentFilters = {}) => {
   if (companyId) query.companyId = companyId;
 
   const [students, total] = await Promise.all([
-    StudentModel.find(query).lean().skip(skip).limit(limit),
+    StudentModel.find(query)
+      .populate('companyId')
+      .populate('agentId')
+      .lean()
+      .skip(skip)
+      .limit(limit),
     StudentModel.countDocuments(query),
   ]);
 
+  // Transform the response to rename the fields
+  const transformedStudents = students.map(student => ({
+    ...student,
+    company: student.companyId,
+    agent: student.agentId,
+    companyId: undefined,
+    agentId: undefined
+  }));
+
   return {
-    students,
+    students: transformedStudents,
     totalPages: Math.ceil(total / limit),
     currentPage: page,
   };

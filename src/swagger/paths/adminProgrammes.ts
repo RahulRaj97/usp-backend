@@ -126,6 +126,13 @@ export const adminProgrammePaths: OpenAPIV3.PathsObject = {
     put: {
       tags: ['AdminProgrammes'],
       summary: 'Update a programme',
+      description: `Update a programme with support for:
+        - Basic field updates (name, description, etc.)
+        - Array operations (add/remove items from otherFees, metaKeywords, modules, services)
+        - Intake operations (add/remove/update intakes)
+        - Image operations (add new images, remove existing images, reorder images)
+        - Program requirements updates
+      `,
       security: [{ BearerAuth: [] }],
       parameters: [
         {
@@ -145,7 +152,7 @@ export const adminProgrammePaths: OpenAPIV3.PathsObject = {
       },
       responses: {
         '200': {
-          description: 'Programme updated',
+          description: 'Programme updated successfully',
           content: {
             'application/json': {
               schema: { $ref: '#/components/schemas/Programme' },
@@ -154,6 +161,19 @@ export const adminProgrammePaths: OpenAPIV3.PathsObject = {
         },
         '401': { $ref: '#/components/responses/Unauthorized' },
         '404': { $ref: '#/components/responses/NotFound' },
+        '400': { 
+          description: 'Invalid request format or data',
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  message: { type: 'string' }
+                }
+              }
+            }
+          }
+        },
       },
     },
     delete: {

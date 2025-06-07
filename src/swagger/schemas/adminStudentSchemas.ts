@@ -128,6 +128,8 @@ export const adminStudentSchemas: OpenAPIV3.ComponentsObject['schemas'] = {
         type: 'array',
         items: { $ref: '#/components/schemas/Document' },
       },
+      company: { $ref: '#/components/schemas/Company' },
+      agent: { $ref: '#/components/schemas/Agent' },
       createdAt: {
         type: 'string',
         format: 'date-time',

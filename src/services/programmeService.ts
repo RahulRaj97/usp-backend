@@ -76,6 +76,25 @@ export interface AdminUpdateProgrammeDto {
   services?: string[];
   // multer‐populated
   imageFiles?: Express.Multer.File[];
+  // Operation fields
+  imageOperations?: {
+    remove?: string[];
+    reorder?: string[];
+  };
+  arrayOperations?: {
+    otherFees?: { remove?: string[]; add?: string[] };
+    metaKeywords?: { remove?: string[]; add?: string[] };
+    modules?: { remove?: string[]; add?: string[] };
+    services?: { remove?: string[]; add?: string[] };
+  };
+  intakeOperations?: {
+    remove?: number[]; // Array of intake indices to remove
+    update?: Array<{
+      index: number; // Index of the intake to update
+      updates: Partial<IProgramIntake>;
+    }>;
+    add?: IProgramIntake[];
+  };
 }
 
 interface ProgrammeResponse {
@@ -579,15 +598,10 @@ export async function updateProgrammeAdmin(
     'deliveryMethod',
     'tuitionFee',
     'applicationFee',
-    'otherFees',
     'published',
     'metaTitle',
     'metaDescription',
-    'metaKeywords',
-    'intakes',
     'programRequirement',
-    'modules',
-    'services',
   ] as (keyof AdminUpdateProgrammeDto)[]) {
     if (dto[field] !== undefined) {
       // @ts-ignore
@@ -595,7 +609,91 @@ export async function updateProgrammeAdmin(
     }
   }
 
-  // images: append
+  // Handle array operations
+  if (dto.arrayOperations) {
+    const { otherFees, metaKeywords, modules, services } = dto.arrayOperations;
+
+    if (otherFees) {
+      prog.otherFees = [
+        ...prog.otherFees.filter(fee => !otherFees.remove?.includes(fee)),
+        ...(otherFees.add || [])
+      ];
+    }
+
+    if (metaKeywords) {
+      prog.metaKeywords = [
+        ...prog.metaKeywords.filter(keyword => !metaKeywords.remove?.includes(keyword)),
+        ...(metaKeywords.add || [])
+      ];
+    }
+
+    if (modules) {
+      prog.modules = [
+        ...prog.modules.filter(module => !modules.remove?.includes(module)),
+        ...(modules.add || [])
+      ];
+    }
+
+    if (services) {
+      prog.services = [
+        ...prog.services.filter(service => !services.remove?.includes(service)),
+        ...(services.add || [])
+      ];
+    }
+  }
+
+  // Handle intake operations
+  if (dto.intakeOperations) {
+    const { remove, update, add } = dto.intakeOperations;
+
+    // Remove intakes by index
+    if (remove?.length) {
+      // Sort indices in descending order to avoid index shifting
+      const sortedIndices = [...remove].sort((a, b) => b - a);
+      for (const index of sortedIndices) {
+        if (index >= 0 && index < prog.intakes.length) {
+          prog.intakes.splice(index, 1);
+        }
+      }
+    }
+
+    // Update existing intakes by index
+    if (update?.length) {
+      for (const { index, updates } of update) {
+        if (index >= 0 && index < prog.intakes.length) {
+          prog.intakes[index] = {
+            ...prog.intakes[index],
+            ...updates
+          };
+        }
+      }
+    }
+
+    // Add new intakes
+    if (add?.length) {
+      prog.intakes.push(...add);
+    }
+  }
+
+  // Handle image operations
+  if (dto.imageOperations) {
+    const { remove, reorder } = dto.imageOperations;
+
+    // Remove images
+    if (remove?.length) {
+      prog.images = prog.images.filter(img => !remove.includes(img));
+    }
+
+    // Reorder images
+    if (reorder?.length) {
+      const imageMap = new Map(prog.images.map(img => [img, img]));
+      prog.images = reorder
+        .filter(img => imageMap.has(img))
+        .map(img => imageMap.get(img)!);
+    }
+  }
+
+  // Add new images
   if (dto.imageFiles && dto.imageFiles.length) {
     const newUrls = await Promise.all(
       dto.imageFiles.map((file) =>
