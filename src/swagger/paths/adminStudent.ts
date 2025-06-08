@@ -136,7 +136,12 @@ export const adminStudentPaths: OpenAPIV3.PathsObject = {
           'multipart/form-data': {
             schema: { $ref: '#/components/schemas/UpdateStudentRequest' },
             encoding: {
+              profileImage: { style: 'form', explode: false },
               documents: { style: 'form', explode: false },
+              documentTypes: { style: 'form', explode: true },
+              removeDocuments: { style: 'form', explode: true },
+              education: { style: 'form', explode: true },
+              address: { style: 'form', explode: true }
             },
           },
         },

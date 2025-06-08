@@ -115,8 +115,12 @@ export const updateStudent = async (id: string, data: any, files: any) => {
   session.startTransaction();
 
   try {
-    const student = await StudentModel.findById(id).populate<{ user: IUser }>('user');
+    const student = await getStudentById(id);
     if (!student) throw new NotFoundError('Student not found');
+
+    const studentUser = await userModel.findById(student.user._id);
+
+    if(!studentUser) throw new NotFoundError('User not found');
 
     // Update user details if provided
     if (data.address || data.profileImage) {
@@ -146,7 +150,7 @@ export const updateStudent = async (id: string, data: any, files: any) => {
 
           // Update address using dot notation
           const updateResult = await userModel.updateOne(
-            { _id: student.user },
+            { _id: studentUser._id },
             {
               $set: {
                 'address.street': addressData.street || '',
@@ -185,7 +189,7 @@ export const updateStudent = async (id: string, data: any, files: any) => {
       // Update other user fields if any
       if (Object.keys(userUpdates).length > 0) {
         await userModel.findByIdAndUpdate(
-          student.user,
+          studentUser._id,
           { $set: userUpdates },
           { session }
         );
@@ -212,7 +216,12 @@ export const updateStudent = async (id: string, data: any, files: any) => {
           }
         });
 
-        student.education = education;
+        // Update education using findByIdAndUpdate
+        await StudentModel.findByIdAndUpdate(
+          student._id,
+          { $set: { education } },
+          { session }
+        );
       } catch (error) {
         throw new Error('Invalid education data format');
       }
@@ -244,7 +253,19 @@ export const updateStudent = async (id: string, data: any, files: any) => {
           };
         }),
       );
-      student.documents.push(...uploadedDocuments);
+
+      // Update student with new documents using findByIdAndUpdate
+      await StudentModel.findByIdAndUpdate(
+        student._id,
+        {
+          $push: {
+            documents: {
+              $each: uploadedDocuments
+            }
+          }
+        },
+        { session }
+      );
     }
 
     // Remove documents if specified
@@ -297,8 +318,12 @@ export const updateStudent = async (id: string, data: any, files: any) => {
       }
     });
 
-    Object.assign(student, studentUpdates);
-    await student.save({ session });
+    // Update student using findByIdAndUpdate instead of save
+    await StudentModel.findByIdAndUpdate(
+      student._id,
+      { $set: studentUpdates },
+      { session }
+    );
 
     await session.commitTransaction();
 
@@ -379,12 +404,26 @@ export const listStudentsAdmin = async (filters: AdminStudentFilters = {}) => {
   if (companyId) query.companyId = companyId;
 
   const [students, total] = await Promise.all([
-    StudentModel.find(query).lean().skip(skip).limit(limit),
+    StudentModel.find(query)
+      .populate('companyId')
+      .populate('agentId')
+      .lean()
+      .skip(skip)
+      .limit(limit),
     StudentModel.countDocuments(query),
   ]);
 
+  // Transform the response to rename the fields
+  const transformedStudents = students.map(student => ({
+    ...student,
+    company: student.companyId,
+    agent: student.agentId,
+    companyId: undefined,
+    agentId: undefined
+  }));
+
   return {
-    students,
+    students: transformedStudents,
     totalPages: Math.ceil(total / limit),
     currentPage: page,
   };

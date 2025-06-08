@@ -18,7 +18,7 @@ router.use(authenticate, requireAdmin);
 router.get('/', listStudentsAdminController);
 router.get('/:id', getStudentByIdAdminController);
 router.post('/', upload.array('documents'), createStudentAdminController);
-router.put('/:id', upload.array('documents'), updateStudentAdminController);
+router.put('/:id', upload.fields([{ name: 'profileImage', maxCount: 1 }, { name: 'documents' }]), updateStudentAdminController);
 router.delete('/:id', deleteStudentAdminController);
 
 export default router;

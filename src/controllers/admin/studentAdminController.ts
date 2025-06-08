@@ -73,9 +73,7 @@ export const updateStudentAdminController = async (
   next: NextFunction,
 ) => {
   try {
-    const files = Array.isArray(req.files)
-      ? (req.files as Express.Multer.File[])
-      : [];
+    const files = req.files as Express.Multer.File[];
     const updated = await adminUpdateStudent(req.params.id, req.body, files);
     res.status(StatusCodes.OK).json(updated);
   } catch (err) {

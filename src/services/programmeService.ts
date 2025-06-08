@@ -156,7 +156,6 @@ export async function listProgrammesForAgent(filters: AgentProgrammeFilters) {
   }
 
   if (filters.universityId) {
-    console.log('Filtering by universityId:', filters.universityId);
     match.universityId = filters.universityId;
   }
 
@@ -372,7 +371,6 @@ export async function listProgrammesAdmin(filters: AdminProgrammeFilters) {
 
   // If no country filter, we can just use find()
   if (!filters.country) {
-    console.log('Using find() with query:', JSON.stringify(query, null, 2));
     const [docs, total] = await Promise.all([
       programmeModel
         .find(query)
@@ -382,7 +380,6 @@ export async function listProgrammesAdmin(filters: AdminProgrammeFilters) {
         .populate('universityId', 'name logo website'),
       programmeModel.countDocuments(query),
     ]);
-    console.log('Found documents:', docs.length, 'Total:', total);
 
     return {
       programmes: await Promise.all(docs.map((d) => projectProgramme(d))),

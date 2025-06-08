@@ -35,6 +35,8 @@ export const updateStudentController = async (
   next: NextFunction,
 ) => {
   try {
+    console.log('Student Update - Request Body:', req.body);
+    console.log('Student Update - Files:', req.files);
     const student = await updateStudent(req.params.id, req.body, req.files);
     res.status(StatusCodes.OK).json(student);
   } catch (error) {
