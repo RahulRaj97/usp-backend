@@ -173,9 +173,22 @@ export const applicationSchemas: OpenAPIV3.ComponentsObject['schemas'] = {
         description: 'The comment text'
       },
       createdBy: { 
-        type: 'string',
-        example: '60d0fe4f5311236168a109cb',
-        description: 'Reference to the admin who created the comment'
+        type: 'object',
+        properties: {
+          _id: { 
+            type: 'string',
+            example: '60d0fe4f5311236168a109cb'
+          },
+          firstName: {
+            type: 'string',
+            example: 'John'
+          },
+          lastName: {
+            type: 'string',
+            example: 'Doe'
+          }
+        },
+        description: 'Admin who created the comment'
       },
       createdAt: {
         type: 'string',

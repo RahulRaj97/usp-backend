@@ -31,8 +31,21 @@ type EnrichedApp = IApplication & { student: any };
 async function enrichOne(id: string): Promise<EnrichedApp> {
   const doc = await applicationModel.findById(id)
     .populate('studentId')
-    .populate('comments.createdBy', 'firstName lastName email')
+    .populate({
+      path: 'comments',
+      populate: {
+        path: 'createdBy',
+        select: 'firstName lastName',
+        model: 'Admin',
+        transform: (doc) => ({
+          _id: doc._id,
+          firstName: doc.firstName,
+          lastName: doc.lastName
+        })
+      }
+    })
     .lean();
+  
   if (!doc) throw new NotFoundError('Application not found');
   const { studentId, __v, ...rest } = doc as any;
   return { ...rest, student: studentId } as EnrichedApp;
@@ -356,16 +369,22 @@ export async function adminDeleteApplication(id: string): Promise<void> {
 export async function addComment(
   applicationId: string,
   content: string,
-  adminId: Types.ObjectId
+  userId: string | Types.ObjectId
 ): Promise<IApplication> {
   const application = await applicationModel.findById(applicationId);
   if (!application) {
     throw new NotFoundError('Application not found');
   }
 
+  // First get the admin ID from the user ID
+  const admin = await mongoose.model('Admin').findOne({ user: userId });
+  if (!admin) {
+    throw new NotFoundError('Admin not found for this user');
+  }
+
   const comment: Comment = {
     content,
-    createdBy: adminId,
+    createdBy: admin._id,
     createdAt: new Date(),
     updatedAt: new Date(),
   };
@@ -373,7 +392,7 @@ export async function addComment(
   application.comments.push(comment);
   await application.save();
 
-  return application;
+  return enrichOne(applicationId);
 }
 
 /** Admin: update a specific comment */
@@ -381,7 +400,7 @@ export async function updateComment(
   applicationId: string,
   commentIndex: number,
   content: string,
-  adminId: Types.ObjectId
+  userId: string | Types.ObjectId
 ): Promise<IApplication> {
   const application = await applicationModel.findById(applicationId);
   if (!application) {
@@ -392,8 +411,14 @@ export async function updateComment(
     throw new NotFoundError('Comment not found');
   }
 
+  // Get admin ID from user ID
+  const admin = await mongoose.model('Admin').findOne({ user: userId });
+  if (!admin) {
+    throw new NotFoundError('Admin not found for this user');
+  }
+
   const comment = application.comments[commentIndex];
-  if (!comment.createdBy.equals(adminId)) {
+  if (!comment.createdBy.equals(admin._id)) {
     throw new UnauthorizedError('Not authorized to update this comment');
   }
 
@@ -401,14 +426,14 @@ export async function updateComment(
   comment.updatedAt = new Date();
   
   await application.save();
-  return application;
+  return enrichOne(applicationId);
 }
 
 /** Admin: delete a specific comment */
 export async function deleteComment(
   applicationId: string,
   commentIndex: number,
-  adminId: Types.ObjectId
+  userId: string | Types.ObjectId
 ): Promise<IApplication> {
   const application = await applicationModel.findById(applicationId);
   if (!application) {
@@ -419,13 +444,19 @@ export async function deleteComment(
     throw new NotFoundError('Comment not found');
   }
 
+  // Get admin ID from user ID
+  const admin = await mongoose.model('Admin').findOne({ user: userId });
+  if (!admin) {
+    throw new NotFoundError('Admin not found for this user');
+  }
+
   const comment = application.comments[commentIndex];
-  if (!comment.createdBy.equals(adminId)) {
+  if (!comment.createdBy.equals(admin._id)) {
     throw new UnauthorizedError('Not authorized to delete this comment');
   }
 
   application.comments.splice(commentIndex, 1);
   await application.save();
   
-  return application;
+  return enrichOne(applicationId);
 }

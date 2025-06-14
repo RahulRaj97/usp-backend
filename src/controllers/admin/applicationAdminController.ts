@@ -15,6 +15,7 @@ import {
 } from '../../services/applicationService';
 import { StatusCodes } from '../../utils/httpStatuses';
 import { uploadFileBufferToS3 } from '../../services/s3UploadHelpter';
+import { UnauthorizedError } from '../../utils/appError';
 
 /**
  * Admin: create any application
@@ -186,9 +187,13 @@ export const addCommentAdmin = async (
   try {
     const { id } = req.params;
     const { content } = req.body;
-    const adminId = (req.user as any).id || (req.user as any)._id;
+    const userId = (req.user as any).id || (req.user as any)._id;
     
-    const application = await addComment(id, content, adminId);
+    if (!userId) {
+      throw new UnauthorizedError('User ID not found');
+    }
+
+    const application = await addComment(id, content, userId);
     res.status(StatusCodes.OK).json(application);
   } catch (err) {
     next(err);
@@ -206,13 +211,17 @@ export const updateCommentAdmin = async (
   try {
     const { id, commentIndex } = req.params;
     const { content } = req.body;
-    const adminId = (req.user as any).id || (req.user as any)._id;
+    const userId = (req.user as any).id || (req.user as any)._id;
+    
+    if (!userId) {
+      throw new UnauthorizedError('User ID not found');
+    }
 
     const application = await updateComment(
       id,
       parseInt(commentIndex),
       content,
-      adminId
+      userId
     );
     res.status(StatusCodes.OK).json(application);
   } catch (err) {
@@ -230,12 +239,16 @@ export const deleteCommentAdmin = async (
 ) => {
   try {
     const { id, commentIndex } = req.params;
-    const adminId = (req.user as any).id || (req.user as any)._id;
+    const userId = (req.user as any).id || (req.user as any)._id;
+    
+    if (!userId) {
+      throw new UnauthorizedError('User ID not found');
+    }
 
     const application = await deleteComment(
       id,
       parseInt(commentIndex),
-      adminId
+      userId
     );
     res.status(StatusCodes.OK).json(application);
   } catch (err) {
