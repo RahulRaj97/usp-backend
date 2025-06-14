@@ -281,4 +281,140 @@ export const adminApplicationPaths: OpenAPIV3.PathsObject = {
       },
     },
   },
+
+  '/api/admin/applications/{id}/comments': {
+    post: {
+      tags: ['Admin Applications'],
+      summary: 'Add Comment to Application',
+      description: 'Add a new comment to an application. Only admins can add comments.',
+      security: [{ BearerAuth: [] }],
+      parameters: [
+        {
+          name: 'id',
+          in: 'path',
+          schema: { type: 'string' },
+          required: true,
+        },
+      ],
+      requestBody: {
+        required: true,
+        content: {
+          'application/json': {
+            schema: {
+              type: 'object',
+              properties: {
+                content: { 
+                  type: 'string',
+                  example: 'Please provide additional financial documents',
+                },
+              },
+              required: ['content'],
+            },
+          },
+        },
+      },
+      responses: {
+        200: {
+          description: 'Application with new comment added',
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/Application' },
+            },
+          },
+        },
+        400: { description: 'Validation error' },
+        404: { description: 'Not found' },
+        401: { description: 'Unauthorized' },
+      },
+    },
+  },
+
+  '/api/admin/applications/{id}/comments/{commentIndex}': {
+    put: {
+      tags: ['Admin Applications'],
+      summary: 'Update Comment',
+      description: 'Update an existing comment. Only the admin who created the comment can update it.',
+      security: [{ BearerAuth: [] }],
+      parameters: [
+        {
+          name: 'id',
+          in: 'path',
+          schema: { type: 'string' },
+          required: true,
+        },
+        {
+          name: 'commentIndex',
+          in: 'path',
+          schema: { type: 'integer' },
+          required: true,
+          description: 'Index of the comment in the comments array',
+        },
+      ],
+      requestBody: {
+        required: true,
+        content: {
+          'application/json': {
+            schema: {
+              type: 'object',
+              properties: {
+                content: { 
+                  type: 'string',
+                  example: 'Updated comment text',
+                },
+              },
+              required: ['content'],
+            },
+          },
+        },
+      },
+      responses: {
+        200: {
+          description: 'Application with updated comment',
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/Application' },
+            },
+          },
+        },
+        400: { description: 'Validation error' },
+        404: { description: 'Not found' },
+        401: { description: 'Unauthorized' },
+        403: { description: 'Forbidden - not the comment creator' },
+      },
+    },
+    delete: {
+      tags: ['Admin Applications'],
+      summary: 'Delete Comment',
+      description: 'Delete a comment. Only the admin who created the comment can delete it.',
+      security: [{ BearerAuth: [] }],
+      parameters: [
+        {
+          name: 'id',
+          in: 'path',
+          schema: { type: 'string' },
+          required: true,
+        },
+        {
+          name: 'commentIndex',
+          in: 'path',
+          schema: { type: 'integer' },
+          required: true,
+          description: 'Index of the comment in the comments array',
+        },
+      ],
+      responses: {
+        200: {
+          description: 'Application with comment removed',
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/Application' },
+            },
+          },
+        },
+        404: { description: 'Not found' },
+        401: { description: 'Unauthorized' },
+        403: { description: 'Forbidden - not the comment creator' },
+      },
+    },
+  },
 };

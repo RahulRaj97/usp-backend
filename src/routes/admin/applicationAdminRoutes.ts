@@ -11,6 +11,9 @@ import {
   getApplicationByIdAdmin,
   uploadSupportingDocsAdmin,
   setStageStatusAdmin,
+  addCommentAdmin,
+  updateCommentAdmin,
+  deleteCommentAdmin,
 } from '../../controllers/admin/applicationAdminController';
 
 export const upload = multer({ storage: multer.memoryStorage() });
@@ -29,6 +32,11 @@ router.put('/:id', updateApplicationAdmin);
 router.patch('/:id/withdraw', withdrawApplicationAdmin);
 router.patch('/:id/stage-status', setStageStatusAdmin);
 router.delete('/:id', deleteApplicationAdmin);
+
+// Comment routes
+router.post('/:id/comments', addCommentAdmin);
+router.put('/:id/comments/:commentIndex', updateCommentAdmin);
+router.delete('/:id/comments/:commentIndex', deleteCommentAdmin);
 
 router.post(
   '/:id/supporting-documents',

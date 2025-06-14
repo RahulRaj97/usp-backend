@@ -9,6 +9,9 @@ import {
   AdminApplicationDto,
   ApplicationFilters as AdminApplicationFilters,
   setStageStatus,
+  addComment,
+  updateComment,
+  deleteComment,
 } from '../../services/applicationService';
 import { StatusCodes } from '../../utils/httpStatuses';
 import { uploadFileBufferToS3 } from '../../services/s3UploadHelpter';
@@ -167,6 +170,74 @@ export const setStageStatusAdmin = async (
     const adminId = (req.user as any).id || (req.user as any)._id;
     const updated = await setStageStatus(req.params.id, stage as any, done, adminId, notes, attachments);
     res.status(StatusCodes.OK).json(updated);
+  } catch (err) {
+    next(err);
+  }
+};
+
+/**
+ * Admin: add a comment to an application
+ */
+export const addCommentAdmin = async (
+  req: Request<{ id: string }, {}, { content: string }>,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const { id } = req.params;
+    const { content } = req.body;
+    const adminId = (req.user as any).id || (req.user as any)._id;
+    
+    const application = await addComment(id, content, adminId);
+    res.status(StatusCodes.OK).json(application);
+  } catch (err) {
+    next(err);
+  }
+};
+
+/**
+ * Admin: update a comment
+ */
+export const updateCommentAdmin = async (
+  req: Request<{ id: string; commentIndex: string }, {}, { content: string }>,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const { id, commentIndex } = req.params;
+    const { content } = req.body;
+    const adminId = (req.user as any).id || (req.user as any)._id;
+
+    const application = await updateComment(
+      id,
+      parseInt(commentIndex),
+      content,
+      adminId
+    );
+    res.status(StatusCodes.OK).json(application);
+  } catch (err) {
+    next(err);
+  }
+};
+
+/**
+ * Admin: delete a comment
+ */
+export const deleteCommentAdmin = async (
+  req: Request<{ id: string; commentIndex: string }>,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const { id, commentIndex } = req.params;
+    const adminId = (req.user as any).id || (req.user as any)._id;
+
+    const application = await deleteComment(
+      id,
+      parseInt(commentIndex),
+      adminId
+    );
+    res.status(StatusCodes.OK).json(application);
   } catch (err) {
     next(err);
   }

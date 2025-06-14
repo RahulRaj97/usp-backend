@@ -164,6 +164,33 @@ export const applicationSchemas: OpenAPIV3.ComponentsObject['schemas'] = {
     description: 'The authenticated user is used as the admin performing the action.'
   },
 
+  Comment: {
+    type: 'object',
+    properties: {
+      content: { 
+        type: 'string',
+        example: 'Please provide additional financial documents',
+        description: 'The comment text'
+      },
+      createdBy: { 
+        type: 'string',
+        example: '60d0fe4f5311236168a109cb',
+        description: 'Reference to the admin who created the comment'
+      },
+      createdAt: {
+        type: 'string',
+        format: 'date-time',
+        example: '2024-03-21T16:43:10Z',
+      },
+      updatedAt: {
+        type: 'string',
+        format: 'date-time',
+        example: '2024-03-21T16:43:10Z',
+      },
+    },
+    required: ['content', 'createdBy', 'createdAt', 'updatedAt'],
+  },
+
   Application: {
     type: 'object',
     properties: {
@@ -229,6 +256,11 @@ export const applicationSchemas: OpenAPIV3.ComponentsObject['schemas'] = {
         items: { $ref: '#/components/schemas/StageHistoryEntry' },
         description: 'Audit trail of all stage completions/changes',
       },
+      comments: {
+        type: 'array',
+        items: { $ref: '#/components/schemas/Comment' },
+        description: 'Comments added by admins',
+      },
       createdAt: {
         type: 'string',
         format: 'date-time',
@@ -249,6 +281,7 @@ export const applicationSchemas: OpenAPIV3.ComponentsObject['schemas'] = {
       'isWithdrawn',
       'stageStatus',
       'stageHistory',
+      'comments',
       'createdAt',
       'updatedAt',
     ],

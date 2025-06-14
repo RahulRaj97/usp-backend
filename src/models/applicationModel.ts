@@ -93,6 +93,18 @@ const StageStatusSchema = new Schema<StageStatusEntry>({
   attachments: [{ type: String }],
 }, { _id: false });
 
+export interface Comment {
+  content: string;
+  createdBy: mongoose.Types.ObjectId;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+const CommentSchema = new Schema<Comment>({
+  content: { type: String, required: true },
+  createdBy: { type: Schema.Types.ObjectId, ref: 'Admin', required: true },
+}, { timestamps: true });
+
 export interface IApplication extends Document {
   _id: mongoose.Types.ObjectId;
   applicationCode: string;
@@ -112,6 +124,7 @@ export interface IApplication extends Document {
   isWithdrawn: boolean;
   stageHistory: StageHistoryEntry[];
   stageStatus: StageStatusEntry[];
+  comments: Comment[];
   createdAt: Date;
   updatedAt: Date;
 }
@@ -176,6 +189,11 @@ const ApplicationSchema = new Schema<IApplication>(
 
     stageStatus: {
       type: [StageStatusSchema],
+      default: [],
+    },
+
+    comments: {
+      type: [CommentSchema],
       default: [],
     },
   },

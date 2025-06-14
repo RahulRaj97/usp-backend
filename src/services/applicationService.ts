@@ -1,5 +1,5 @@
 // src/services/applicationService.ts
-import mongoose from 'mongoose';
+import mongoose, { Types } from 'mongoose';
 import agentModel from '../models/agentModel';
 import applicationModel, {
   IApplication,
@@ -7,6 +7,7 @@ import applicationModel, {
   ApplicationStatus,
   StageHistoryEntry,
   STAGE_VALUES,
+  Comment,
 } from '../models/applicationModel';
 import { NotFoundError, UnauthorizedError } from '../utils/appError';
 import { getAgentById } from './agentService';
@@ -28,7 +29,10 @@ type EnrichedApp = IApplication & { student: any };
  * Internal helper: load one application, populate student, strip Mongoose metadata
  */
 async function enrichOne(id: string): Promise<EnrichedApp> {
-  const doc = await applicationModel.findById(id).populate('studentId').lean();
+  const doc = await applicationModel.findById(id)
+    .populate('studentId')
+    .populate('comments.createdBy', 'firstName lastName email')
+    .lean();
   if (!doc) throw new NotFoundError('Application not found');
   const { studentId, __v, ...rest } = doc as any;
   return { ...rest, student: studentId } as EnrichedApp;
@@ -346,4 +350,82 @@ export async function adminWithdrawApplication(
 export async function adminDeleteApplication(id: string): Promise<void> {
   const result = await applicationModel.findByIdAndDelete(id);
   if (!result) throw new NotFoundError('Application not found');
+}
+
+/** Admin: add a comment to an application */
+export async function addComment(
+  applicationId: string,
+  content: string,
+  adminId: Types.ObjectId
+): Promise<IApplication> {
+  const application = await applicationModel.findById(applicationId);
+  if (!application) {
+    throw new NotFoundError('Application not found');
+  }
+
+  const comment: Comment = {
+    content,
+    createdBy: adminId,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  };
+
+  application.comments.push(comment);
+  await application.save();
+
+  return application;
+}
+
+/** Admin: update a specific comment */
+export async function updateComment(
+  applicationId: string,
+  commentIndex: number,
+  content: string,
+  adminId: Types.ObjectId
+): Promise<IApplication> {
+  const application = await applicationModel.findById(applicationId);
+  if (!application) {
+    throw new NotFoundError('Application not found');
+  }
+
+  if (commentIndex < 0 || commentIndex >= application.comments.length) {
+    throw new NotFoundError('Comment not found');
+  }
+
+  const comment = application.comments[commentIndex];
+  if (!comment.createdBy.equals(adminId)) {
+    throw new UnauthorizedError('Not authorized to update this comment');
+  }
+
+  comment.content = content;
+  comment.updatedAt = new Date();
+  
+  await application.save();
+  return application;
+}
+
+/** Admin: delete a specific comment */
+export async function deleteComment(
+  applicationId: string,
+  commentIndex: number,
+  adminId: Types.ObjectId
+): Promise<IApplication> {
+  const application = await applicationModel.findById(applicationId);
+  if (!application) {
+    throw new NotFoundError('Application not found');
+  }
+
+  if (commentIndex < 0 || commentIndex >= application.comments.length) {
+    throw new NotFoundError('Comment not found');
+  }
+
+  const comment = application.comments[commentIndex];
+  if (!comment.createdBy.equals(adminId)) {
+    throw new UnauthorizedError('Not authorized to delete this comment');
+  }
+
+  application.comments.splice(commentIndex, 1);
+  await application.save();
+  
+  return application;
 }
