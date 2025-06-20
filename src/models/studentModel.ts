@@ -39,6 +39,7 @@ export interface IStudent extends Document {
   education: IEducation[];
   documents: IDocument[];
   studentId: string;
+  isDuplicate: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -87,6 +88,7 @@ const StudentSchema: Schema = new Schema(
       required: true,
       unique: true,
     },
+    isDuplicate: { type: Boolean, default: false },
   },
   { timestamps: true },
 );

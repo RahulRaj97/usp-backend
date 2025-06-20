@@ -122,6 +122,8 @@ export interface IApplication extends Document {
   supportingDocuments?: string[];
   submittedAt?: Date;
   isWithdrawn: boolean;
+  isDuplicate: boolean;
+  duplicateApplicationId?: mongoose.Types.ObjectId;
   stageHistory: StageHistoryEntry[];
   stageStatus: StageStatusEntry[];
   comments: Comment[];
@@ -181,6 +183,8 @@ const ApplicationSchema = new Schema<IApplication>(
     supportingDocuments: [String],
     submittedAt: Date,
     isWithdrawn: { type: Boolean, default: false },
+    isDuplicate: { type: Boolean, default: false },
+    duplicateApplicationId: { type: Schema.Types.ObjectId, ref: 'Application' },
 
     stageHistory: {
       type: [StageHistorySchema],

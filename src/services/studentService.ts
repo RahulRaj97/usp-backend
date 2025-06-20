@@ -14,6 +14,7 @@ import { getCountryCode } from '../utils/countryCodeMap';
 import { generateStudentId } from '../utils/generateStudentId';
 import companyModel from '../models/companyModel';
 import { IUser } from '../models/userModel';
+import applicationModel from '../models/applicationModel';
 
 export const createStudent = async (data: any, agent: IAgent) => {
   const session = await mongoose.startSession();
@@ -42,6 +43,15 @@ export const createStudent = async (data: any, agent: IAgent) => {
 
     const education = JSON.parse(data.education || '[]');
 
+    // Check for duplicate passport number if passportNumber is provided
+    let isDuplicate = false;
+    if (passportNumber) {
+      const existingStudent = await StudentModel.findOne({ 
+        passportNumber: passportNumber 
+      }).session(session);
+      isDuplicate = !!existingStudent;
+    }
+
     // Step 1: Create user
     const user = await userModel.create(
       [
@@ -69,6 +79,7 @@ export const createStudent = async (data: any, agent: IAgent) => {
           education,
           documents: [],
           studentId,
+          isDuplicate,
         },
       ],
       { session },
@@ -311,6 +322,18 @@ export const updateStudent = async (id: string, data: any, files: any) => {
       profileStatus: data.profileStatus,
     };
 
+    // Check for duplicate passport number if passportNumber is being updated
+    if (data.passportNumber && data.passportNumber !== student.passportNumber) {
+      const existingStudent = await StudentModel.findOne({ 
+        passportNumber: data.passportNumber,
+        _id: { $ne: student._id } // Exclude current student from check
+      }).session(session);
+      studentUpdates.isDuplicate = !!existingStudent;
+
+      // If passport number changed, recheck all applications for this student
+      await recheckDuplicateApplications(student._id, session);
+    }
+
     // Remove undefined values
     Object.keys(studentUpdates).forEach((key) => {
       if (studentUpdates[key as keyof typeof studentUpdates] === undefined) {
@@ -471,3 +494,136 @@ export const adminUpdateStudent = async (
 export const adminDeleteStudent = async (id: string) => {
   await deleteStudent(id);
 };
+
+/**
+ * Recheck and update duplicate applications when a student's passport number changes
+ */
+async function recheckDuplicateApplications(
+  studentId: mongoose.Types.ObjectId, 
+  session: mongoose.ClientSession
+) {
+  const student = await StudentModel.findById(studentId).session(session);
+  if (!student || !student.passportNumber) return;
+
+  // Find other students with the same passport number
+  const duplicateStudents = await StudentModel.find({
+    passportNumber: student.passportNumber,
+    _id: { $ne: studentId }
+  }).session(session);
+
+  if (duplicateStudents.length === 0) {
+    // No duplicates found, remove duplicate status from all applications
+    await applicationModel.updateMany(
+      { studentId: studentId },
+      { 
+        isDuplicate: false, 
+        duplicateApplicationId: undefined 
+      },
+      { session }
+    );
+    return;
+  }
+
+  // Get all students with this passport number
+  const allStudentIds = [studentId, ...duplicateStudents.map(s => s._id)];
+  
+  // Find original students (non-duplicates)
+  const originalStudents = await StudentModel.find({
+    _id: { $in: allStudentIds },
+    isDuplicate: false
+  }).session(session);
+
+  if (originalStudents.length > 0) {
+    // There are original students, find their applications
+    const originalStudentIds = originalStudents.map(s => s._id);
+    const originalApplications = await applicationModel.find({
+      studentId: { $in: originalStudentIds },
+      isWithdrawn: false
+    }).sort({ createdAt: 1 }).session(session);
+
+    if (originalApplications.length > 0) {
+      // Use the earliest application from original students as the reference
+      const originalApplication = originalApplications[0];
+      
+      // Update all applications from duplicate students to point to the original
+      const duplicateStudentIds = duplicateStudents.map(s => s._id);
+      await applicationModel.updateMany(
+        { 
+          studentId: { $in: duplicateStudentIds },
+          isWithdrawn: false
+        },
+        { 
+          isDuplicate: true, 
+          duplicateApplicationId: originalApplication._id 
+        },
+        { session }
+      );
+      
+      // Remove duplicate status from applications of original students
+      await applicationModel.updateMany(
+        { studentId: { $in: originalStudentIds } },
+        { 
+          isDuplicate: false, 
+          duplicateApplicationId: undefined 
+        },
+        { session }
+      );
+    } else {
+      // No active applications from original students, remove all duplicate status
+      await applicationModel.updateMany(
+        { studentId: { $in: allStudentIds } },
+        { 
+          isDuplicate: false, 
+          duplicateApplicationId: undefined 
+        },
+        { session }
+      );
+    }
+  } else {
+    // All students are duplicates, use the earliest application as original
+    const allDuplicateStudentIds = allStudentIds;
+    const duplicateApplications = await applicationModel.find({
+      studentId: { $in: allDuplicateStudentIds },
+      isWithdrawn: false
+    }).sort({ createdAt: 1 }).session(session);
+
+    if (duplicateApplications.length === 0) {
+      // No active applications, remove all duplicate status
+      await applicationModel.updateMany(
+        { studentId: { $in: allStudentIds } },
+        { 
+          isDuplicate: false, 
+          duplicateApplicationId: undefined 
+        },
+        { session }
+      );
+      return;
+    }
+
+    // Get the earliest application as the original
+    const originalApplication = duplicateApplications[0];
+
+    // Update all other applications to be duplicates
+    await applicationModel.updateMany(
+      { 
+        studentId: { $in: allStudentIds },
+        _id: { $ne: originalApplication._id }
+      },
+      { 
+        isDuplicate: true, 
+        duplicateApplicationId: originalApplication._id 
+      },
+      { session }
+    );
+    
+    // Ensure the original application is not marked as duplicate
+    await applicationModel.updateOne(
+      { _id: originalApplication._id },
+      { 
+        isDuplicate: false, 
+        duplicateApplicationId: undefined 
+      },
+      { session }
+    );
+  }
+}

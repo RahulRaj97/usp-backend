@@ -161,6 +161,7 @@ export const adminStudentSchemas: OpenAPIV3.ComponentsObject['schemas'] = {
         example: 'pending',
       },
       studentId: { type: 'string', example: 'US00123456' },
+      isDuplicate: { type: 'boolean', example: false },
       education: {
         type: 'array',
         items: { $ref: '#/components/schemas/Education' },

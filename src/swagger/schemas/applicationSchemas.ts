@@ -245,6 +245,8 @@ export const applicationSchemas: OpenAPIV3.ComponentsObject['schemas'] = {
         format: 'date-time',
       },
       isWithdrawn: { type: 'boolean', example: false },
+      isDuplicate: { type: 'boolean', example: false },
+      duplicateApplicationId: { type: 'string', example: '60d0fe4f5311236168a109cf' },
       stageStatus: {
         type: 'array',
         items: {
@@ -292,6 +294,8 @@ export const applicationSchemas: OpenAPIV3.ComponentsObject['schemas'] = {
       'status',
       'currentStage',
       'isWithdrawn',
+      'isDuplicate',
+      'duplicateApplicationId',
       'stageStatus',
       'stageHistory',
       'comments',

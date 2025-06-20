@@ -29,7 +29,7 @@ const CompanySchema: Schema = new Schema(
     name: { type: String, required: true, unique: true },
     website: { type: String },
     phone: { type: String },
-    email: { type: String, unique: true },
+    email: { type: String },
     logo: { type: String },
     documents: { type: [String] },
     ntn: { type: String },

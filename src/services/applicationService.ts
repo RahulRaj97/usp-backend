@@ -9,7 +9,8 @@ import applicationModel, {
   STAGE_VALUES,
   Comment,
 } from '../models/applicationModel';
-import { NotFoundError, UnauthorizedError } from '../utils/appError';
+import StudentModel from '../models/studentModel';
+import { NotFoundError, UnauthorizedError, ConflictError } from '../utils/appError';
 import { getAgentById } from './agentService';
 import { getUserById } from './userService';
 
@@ -64,6 +65,25 @@ export async function setStageStatus(
 ) {
   const app = await applicationModel.findById(applicationId);
   if (!app) throw new NotFoundError('Application not found');
+
+  // Check if this application is part of a duplicate situation
+  if (app.isDuplicate && app.duplicateApplicationId) {
+    // This is a duplicate application - check if original is still active
+    const originalApp = await applicationModel.findById(app.duplicateApplicationId);
+    if (originalApp && !originalApp.isWithdrawn) {
+      throw new ConflictError('Cannot update application while duplicate applications exist. Please withdraw one of the applications first.');
+    }
+  } else if (!app.isDuplicate) {
+    // This is an original application - check if there are any active duplicates
+    const duplicateApps = await applicationModel.find({
+      duplicateApplicationId: app._id,
+      isWithdrawn: false
+    });
+    if (duplicateApps.length > 0) {
+      throw new ConflictError('Cannot update application while duplicate applications exist. Please withdraw one of the applications first.');
+    }
+  }
+
   // Ensure adminId is a mongoose.Types.ObjectId
   const adminObjectId = new mongoose.Types.ObjectId(adminId);
   // Update or add the stageStatus entry
@@ -113,6 +133,64 @@ export async function createApplication(
 ): Promise<EnrichedApp> {
   const agent = await getAgentById(agentUserId);
   if (!agent) throw new UnauthorizedError('Agent not found');
+
+  // Get the student to check for passport number
+  const studentDoc = await StudentModel.findById(studentId).lean();
+  if (!studentDoc) throw new NotFoundError('Student not found');
+
+  // Check for duplicate applications based on passport number
+  let isDuplicate = false;
+  let duplicateApplicationId: mongoose.Types.ObjectId | undefined;
+
+  if (studentDoc.passportNumber) {
+    // Find other students with the same passport number
+    const duplicateStudents = await StudentModel.find({
+      passportNumber: studentDoc.passportNumber,
+      _id: { $ne: studentId }
+    }).lean();
+
+    console.log(duplicateStudents)
+
+    if (duplicateStudents.length > 0) {
+      // Check if any of these students have active applications (not withdrawn)
+      const duplicateStudentIds = duplicateStudents.map(s => s._id);
+      
+      // First, look for applications from non-duplicate students (original students)
+      const originalStudentIds = [studentId, ...duplicateStudentIds];
+      const originalStudents = await StudentModel.find({
+        _id: { $in: originalStudentIds },
+        isDuplicate: false
+      }).lean();
+      
+      if (originalStudents.length > 0) {
+        const originalStudentIds = originalStudents.map(s => s._id);
+        const existingOriginalApplication = await applicationModel.findOne({
+          studentId: { $in: originalStudentIds },
+          isWithdrawn: false
+        }).sort({ createdAt: 1 }); // Get the earliest application from original students
+
+        if (existingOriginalApplication) {
+          // If this student is a duplicate, mark this application as duplicate
+          if (studentDoc.isDuplicate) {
+            isDuplicate = true;
+            duplicateApplicationId = existingOriginalApplication._id;
+          }
+        }
+      } else {
+        // If all students with this passport are duplicates, use the earliest application
+        const existingApplication = await applicationModel.findOne({
+          studentId: { $in: duplicateStudentIds },
+          isWithdrawn: false
+        }).sort({ createdAt: 1 }); // Get the earliest application
+
+        if (existingApplication) {
+          isDuplicate = true;
+          duplicateApplicationId = existingApplication._id;
+        }
+      }
+    }
+  }
+
   const app = await applicationModel.create({
     studentId,
     agentId: agent._id,
@@ -122,6 +200,8 @@ export async function createApplication(
     currentStage: STAGE_VALUES[0],
     submittedAt: new Date(),
     stageStatus: [],
+    isDuplicate,
+    duplicateApplicationId,
   });
   return enrichOne(app._id.toString());
 }
@@ -195,6 +275,24 @@ export async function updateApplication(
   const app = await applicationModel.findById(id);
   if (!app) throw new NotFoundError('Application not found');
 
+  // Check if this application is part of a duplicate situation
+  if (app.isDuplicate && app.duplicateApplicationId) {
+    // This is a duplicate application - check if original is still active
+    const originalApp = await applicationModel.findById(app.duplicateApplicationId);
+    if (originalApp && !originalApp.isWithdrawn) {
+      throw new ConflictError('Cannot update application while duplicate applications exist. Please withdraw one of the applications first.');
+    }
+  } else if (!app.isDuplicate) {
+    // This is an original application - check if there are any active duplicates
+    const duplicateApps = await applicationModel.find({
+      duplicateApplicationId: app._id,
+      isWithdrawn: false
+    });
+    if (duplicateApps.length > 0) {
+      throw new ConflictError('Cannot update application while duplicate applications exist. Please withdraw one of the applications first.');
+    }
+  }
+
   if (data.notes != null) app.notes = data.notes;
   if (data.supportingDocuments) {
     app.supportingDocuments = data.supportingDocuments;
@@ -223,8 +321,21 @@ export async function withdrawApplication(
   if (!app.agentId.equals(agent._id)) {
     throw new UnauthorizedError();
   }
+  
   app.isWithdrawn = true;
   await app.save();
+
+  // If this was the original application, update any duplicate applications
+  if (!app.isDuplicate) {
+    await applicationModel.updateMany(
+      { duplicateApplicationId: app._id },
+      { 
+        isDuplicate: false, 
+        duplicateApplicationId: undefined 
+      }
+    );
+  }
+
   return enrichOne(id);
 }
 
@@ -246,6 +357,64 @@ export async function adminCreateApplication(
 ): Promise<EnrichedApp> {
   const agent = await getAgentById(dto.agentId);
   if (!agent) throw new UnauthorizedError('Agent not found');
+
+  // Get the student to check for passport number
+  const studentDoc = await StudentModel.findById(dto.studentId).lean();
+  if (!studentDoc) throw new NotFoundError('Student not found');
+
+  // Check for duplicate applications based on passport number
+  let isDuplicate = false;
+  let duplicateApplicationId: mongoose.Types.ObjectId | undefined;
+
+  if (studentDoc.passportNumber) {
+    // Find other students with the same passport number
+    const duplicateStudents = await StudentModel.find({
+      passportNumber: studentDoc.passportNumber,
+      _id: { $ne: dto.studentId }
+    }).lean();
+
+    if (duplicateStudents.length > 0) {
+      // Check if any of these students have active applications (not withdrawn)
+      const duplicateStudentIds = duplicateStudents.map(s => s._id);
+      
+      // First, look for applications from non-duplicate students (original students)
+      const originalStudentIds = [dto.studentId, ...duplicateStudentIds];
+      const originalStudents = await StudentModel.find({
+        _id: { $in: originalStudentIds },
+        isDuplicate: false
+      }).lean();
+      
+      if (originalStudents.length > 0) {
+        const originalStudentIds = originalStudents.map(s => s._id);
+        const existingOriginalApplication = await applicationModel.findOne({
+          studentId: { $in: originalStudentIds },
+          isWithdrawn: false
+        }).sort({ createdAt: 1 }); // Get the earliest application from original students
+
+        console.log(existingOriginalApplication)
+
+        if (existingOriginalApplication) {
+          // If this student is a duplicate, mark this application as duplicate
+          if (studentDoc.isDuplicate) {
+            isDuplicate = true;
+            duplicateApplicationId = existingOriginalApplication._id;
+          }
+        }
+      } else {
+        // If all students with this passport are duplicates, use the earliest application
+        const existingApplication = await applicationModel.findOne({
+          studentId: { $in: duplicateStudentIds },
+          isWithdrawn: false
+        }).sort({ createdAt: 1 }); // Get the earliest application
+
+        if (existingApplication) {
+          isDuplicate = true;
+          duplicateApplicationId = existingApplication._id;
+        }
+      }
+    }
+  }
+
   const app = await applicationModel.create({
     ...dto,
     companyId: agent.companyId,
@@ -253,6 +422,8 @@ export async function adminCreateApplication(
     isWithdrawn: false,
     currentStage: STAGE_VALUES[0],
     stageStatus: [],
+    isDuplicate,
+    duplicateApplicationId,
   });
   return enrichOne(app._id.toString());
 }
@@ -311,6 +482,24 @@ export async function adminUpdateApplication(
   const app = await applicationModel.findById(id);
   if (!app) throw new NotFoundError('Application not found');
 
+  // Check if this application is part of a duplicate situation
+  if (app.isDuplicate && app.duplicateApplicationId) {
+    // This is a duplicate application - check if original is still active
+    const originalApp = await applicationModel.findById(app.duplicateApplicationId);
+    if (originalApp && !originalApp.isWithdrawn) {
+      throw new ConflictError('Cannot update application while duplicate applications exist. Please withdraw one of the applications first.');
+    }
+  } else if (!app.isDuplicate) {
+    // This is an original application - check if there are any active duplicates
+    const duplicateApps = await applicationModel.find({
+      duplicateApplicationId: app._id,
+      isWithdrawn: false
+    });
+    if (duplicateApps.length > 0) {
+      throw new ConflictError('Cannot update application while duplicate applications exist. Please withdraw one of the applications first.');
+    }
+  }
+
   if (data.status && data.status !== app.status) {
     app.status = data.status;
   }
@@ -350,12 +539,23 @@ export async function adminUpdateApplication(
 export async function adminWithdrawApplication(
   id: string,
 ): Promise<EnrichedApp> {
-  const app = await applicationModel.findByIdAndUpdate(
-    id,
-    { isWithdrawn: true },
-    { new: true },
-  );
+  const app = await applicationModel.findById(id);
   if (!app) throw new NotFoundError('Application not found');
+
+  app.isWithdrawn = true;
+  await app.save();
+
+  // If this was the original application, update any duplicate applications
+  if (!app.isDuplicate) {
+    await applicationModel.updateMany(
+      { duplicateApplicationId: app._id },
+      { 
+        isDuplicate: false, 
+        duplicateApplicationId: undefined 
+      }
+    );
+  }
+
   return enrichOne(id);
 }
 
